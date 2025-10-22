@@ -1,5 +1,5 @@
 name: Deploy Vite React App to GitHub Pages
-2
+
 on:
   push:
     branches: [main]
