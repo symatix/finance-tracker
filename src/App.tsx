@@ -67,7 +67,7 @@ function AppContent() {
 export default function App() {
 	return (
 		<AuthProvider>
-			<Router>
+			<Router basename='/finance-tracker/'>
 				<Routes>
 					{/* Public login route */}
 					<Route path='/login' element={<Login />} />

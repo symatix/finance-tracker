@@ -5,7 +5,7 @@ import path from 'path';
 // https://vite.dev/config/
 export default defineConfig({
 	plugins: [react()],
-	// base: '/finance-tracker/',
+	base: '/finance-tracker/',
 	resolve: {
 		alias: {
 			'@store': path.resolve(__dirname, './src/store'),
