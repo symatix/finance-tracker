@@ -1,4 +1,4 @@
-import { Card, Stack, Select, MenuItem, InputLabel, FormControl, TextField, Button } from '@mui/material';
+import { Stack, Select, MenuItem, InputLabel, FormControl, TextField, Button } from '@mui/material';
 import { FilterListOff } from '@mui/icons-material';
 import { type Category } from '../../../store/store';
 import { type FilterState } from '../hooks/useTransactionFilter';
