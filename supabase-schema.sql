@@ -68,6 +68,22 @@ CREATE TABLE IF NOT EXISTS recurring_transactions (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create planned_expenses table
+CREATE TABLE IF NOT EXISTS planned_expenses (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    category_id UUID NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    subcategory TEXT,
+    note TEXT,
+    due_date DATE NOT NULL,
+    priority TEXT NOT NULL DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
+    status TEXT NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'confirmed', 'completed', 'cancelled')),
+    user_id UUID, -- For future multi-user support
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
 CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id);
@@ -80,6 +96,10 @@ CREATE INDEX IF NOT EXISTS idx_list_items_checked ON list_items(checked);
 CREATE INDEX IF NOT EXISTS idx_recurring_transactions_user_id ON recurring_transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_recurring_transactions_next_due_date ON recurring_transactions(next_due_date);
 CREATE INDEX IF NOT EXISTS idx_recurring_transactions_is_active ON recurring_transactions(is_active);
+CREATE INDEX IF NOT EXISTS idx_planned_expenses_user_id ON planned_expenses(user_id);
+CREATE INDEX IF NOT EXISTS idx_planned_expenses_due_date ON planned_expenses(due_date);
+CREATE INDEX IF NOT EXISTS idx_planned_expenses_status ON planned_expenses(status);
+CREATE INDEX IF NOT EXISTS idx_planned_expenses_priority ON planned_expenses(priority);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
@@ -87,6 +107,7 @@ ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shopping_lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE list_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recurring_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE planned_expenses ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for public access (adjust as needed for your security requirements)
 -- For now, allow all operations (you may want to restrict this based on user_id in the future)
@@ -95,6 +116,7 @@ CREATE POLICY "Allow all operations on transactions" ON transactions FOR ALL USI
 CREATE POLICY "Allow all operations on shopping_lists" ON shopping_lists FOR ALL USING (true);
 CREATE POLICY "Allow all operations on list_items" ON list_items FOR ALL USING (true);
 CREATE POLICY "Allow all operations on recurring_transactions" ON recurring_transactions FOR ALL USING (true);
+CREATE POLICY "Allow all operations on planned_expenses" ON planned_expenses FOR ALL USING (true);
 
 -- Function to calculate next due date based on frequency
 CREATE OR REPLACE FUNCTION calculate_next_due_date(input_date DATE, frequency TEXT)

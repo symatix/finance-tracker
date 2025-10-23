@@ -34,6 +34,7 @@ export const NavBar = () => {
 		{ label: 'Dashboard', path: '/dashboard' },
 		{ label: 'Transactions', path: '/transactions' },
 		{ label: 'Recurring', path: '/recurring' },
+		{ label: 'Planned', path: '/planned' },
 		{ label: 'Shopping', path: '/shopping' },
 		{ label: 'Categories', path: '/categories' },
 	];

@@ -3,12 +3,15 @@ import {
 	CategoryOperations,
 	TransactionOperations,
 	RecurringTransactionOperations,
+	PlannedExpenseOperations,
 	type CategoryDocument,
 	type TransactionDocument,
 	type RecurringTransactionDocument,
+	type PlannedExpenseDocument,
 	type CreateCategoryInput,
 	type CreateTransactionInput,
 	type CreateRecurringTransactionInput,
+	type CreatePlannedExpenseInput,
 } from '../db';
 
 // ---------- Types ----------
@@ -41,6 +44,7 @@ export interface BudgetState {
 	transactions: Transaction[];
 	categories: Category[];
 	recurringTransactions: Array<RecurringTransactionDocument & { categoryName?: string; categoryType?: string }>;
+	plannedExpenses: Array<PlannedExpenseDocument & { categoryName?: string; categoryType?: string }>;
 	settings: Settings;
 	isLoading: boolean;
 	error: string | null;
@@ -68,6 +72,18 @@ export interface BudgetStore extends BudgetState {
 	deleteRecurringTransaction: (userId: string, id: string) => Promise<void>;
 	loadRecurringTransactions: (userId: string) => Promise<void>;
 	processDueRecurringTransactions: (userId: string) => Promise<void>;
+
+	// Planned expense methods
+	addPlannedExpense: (userId: string, plannedExpense: CreatePlannedExpenseInput) => Promise<void>;
+	updatePlannedExpense: (userId: string, id: string, updates: Partial<PlannedExpenseDocument>) => Promise<void>;
+	deletePlannedExpense: (userId: string, id: string) => Promise<void>;
+	loadPlannedExpenses: (userId: string) => Promise<void>;
+	convertPlannedExpenseToTransaction: (
+		userId: string,
+		id: string,
+		actualAmount?: number,
+		actualDate?: string
+	) => Promise<void>;
 
 	// Category methods (now async)
 	addCategory: (userId: string, category: Omit<Category, 'id'>) => Promise<void>;
@@ -120,6 +136,7 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 	transactions: [],
 	categories: [],
 	recurringTransactions: [],
+	plannedExpenses: [],
 	settings: {
 		monthlyBudget: 0,
 		theme: 'light',
@@ -137,6 +154,7 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 			await get().loadCategories(userId);
 			await get().loadTransactions(userId);
 			await get().loadRecurringTransactions(userId);
+			await get().loadPlannedExpenses(userId);
 
 			set({ isInitialized: true, isLoading: false });
 		} catch (error) {
@@ -345,6 +363,112 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 		}
 	},
 
+	// ----- Planned Expense Methods -----
+	addPlannedExpense: async (userId: string, plannedExpense) => {
+		try {
+			set({ isLoading: true, error: null });
+
+			const plannedExpenseData: CreatePlannedExpenseInput = {
+				...plannedExpense,
+				user_id: userId,
+			};
+
+			const createdDoc = await PlannedExpenseOperations.create(plannedExpenseData);
+
+			set((state) => ({
+				plannedExpenses: [...state.plannedExpenses, createdDoc],
+				isLoading: false,
+			}));
+		} catch (error) {
+			console.error('Failed to add planned expense:', error);
+			set({
+				error: error instanceof Error ? error.message : 'Failed to add planned expense',
+				isLoading: false,
+			});
+		}
+	},
+
+	updatePlannedExpense: async (userId: string, id, updates) => {
+		try {
+			set({ isLoading: true, error: null });
+
+			const updateData: Partial<CreatePlannedExpenseInput> = {};
+			if (updates.name !== undefined) updateData.name = updates.name;
+			if (updates.amount !== undefined) updateData.amount = updates.amount;
+			if (updates.category_id !== undefined) updateData.category_id = updates.category_id;
+			if (updates.subcategory !== undefined) updateData.subcategory = updates.subcategory;
+			if (updates.note !== undefined) updateData.note = updates.note;
+			if (updates.due_date !== undefined) updateData.due_date = updates.due_date;
+			if (updates.priority !== undefined) updateData.priority = updates.priority;
+			if (updates.status !== undefined) updateData.status = updates.status;
+
+			const updatedDoc = await PlannedExpenseOperations.update(id, updateData, userId);
+			if (updatedDoc) {
+				set((state) => ({
+					plannedExpenses: state.plannedExpenses.map((p) => (p.id === id ? updatedDoc : p)),
+					isLoading: false,
+				}));
+			}
+		} catch (error) {
+			console.error('Failed to update planned expense:', error);
+			set({
+				error: error instanceof Error ? error.message : 'Failed to update planned expense',
+				isLoading: false,
+			});
+		}
+	},
+
+	deletePlannedExpense: async (userId: string, id) => {
+		try {
+			set({ isLoading: true, error: null });
+
+			const success = await PlannedExpenseOperations.delete(id, userId);
+			if (success) {
+				set((state) => ({
+					plannedExpenses: state.plannedExpenses.filter((p) => p.id !== id),
+					isLoading: false,
+				}));
+			}
+		} catch (error) {
+			console.error('Failed to delete planned expense:', error);
+			set({
+				error: error instanceof Error ? error.message : 'Failed to delete planned expense',
+				isLoading: false,
+			});
+		}
+	},
+
+	loadPlannedExpenses: async (userId: string) => {
+		try {
+			const plannedExpenseDocs = await PlannedExpenseOperations.findWithCategoryDetails(userId);
+			set({ plannedExpenses: plannedExpenseDocs });
+		} catch (error) {
+			console.error('Failed to load planned expenses:', error);
+			set({
+				error: error instanceof Error ? error.message : 'Failed to load planned expenses',
+			});
+		}
+	},
+
+	convertPlannedExpenseToTransaction: async (userId: string, id, actualAmount, actualDate) => {
+		try {
+			set({ isLoading: true, error: null });
+
+			await PlannedExpenseOperations.convertToTransaction(id, userId, actualAmount, actualDate);
+			// Reload both planned expenses and transactions to reflect changes
+			await get().loadPlannedExpenses(userId);
+			await get().loadTransactions(userId);
+
+			set({ isLoading: false });
+		} catch (error) {
+			console.error('Failed to convert planned expense to transaction:', error);
+			set({
+				error: error instanceof Error ? error.message : 'Failed to convert planned expense to transaction',
+				isLoading: false,
+			});
+		}
+	},
+
 	// ----- Category Methods -----
 	addCategory: async (userId: string, category) => {
 		try {
@@ -533,6 +657,7 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 				transactions: [],
 				categories: [],
 				recurringTransactions: [],
+				plannedExpenses: [],
 				settings: { monthlyBudget: 0, theme: 'light' },
 				isLoading: false,
 			});

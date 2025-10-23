@@ -131,7 +131,7 @@ See `supabase-schema.sql` for the complete schema definition.
 
 ### Core Expansions
 
--   **Planned Expenses & Budget Alerts**: Create planned expense lists with estimated costs, due dates, and budget alerts.
+-   DONE **Planned Expenses & Budget Alerts**: Create planned expense lists with estimated costs, due dates, and budget alerts.
 -   DONE **Shopping List Integration**: Build categorized shopping lists that convert to transactions upon completion.
 -   DONE **Recurring & Subscription Tracking**: Manage recurring expenses and optimize subscriptions.
 
