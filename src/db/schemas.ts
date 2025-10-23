@@ -18,6 +18,10 @@ export type ListItemRow = Database['public']['Tables']['list_items']['Row'];
 export type ListItemInsert = Database['public']['Tables']['list_items']['Insert'];
 export type ListItemUpdate = Database['public']['Tables']['list_items']['Update'];
 
+export type RecurringTransactionRow = Database['public']['Tables']['recurring_transactions']['Row'];
+export type RecurringTransactionInsert = Database['public']['Tables']['recurring_transactions']['Insert'];
+export type RecurringTransactionUpdate = Database['public']['Tables']['recurring_transactions']['Update'];
+
 // Legacy types for backward compatibility (mapped to Supabase types)
 export interface CategoryDocument extends CategoryRow {
 	type: TransactionType;
@@ -38,3 +42,7 @@ export type CreateShoppingListInput = ShoppingListInsert;
 export type UpdateShoppingListInput = ShoppingListUpdate;
 export type CreateListItemInput = ListItemInsert;
 export type UpdateListItemInput = ListItemUpdate;
+
+export type RecurringTransactionDocument = RecurringTransactionRow;
+export type CreateRecurringTransactionInput = RecurringTransactionInsert;
+export type UpdateRecurringTransactionInput = RecurringTransactionUpdate;
