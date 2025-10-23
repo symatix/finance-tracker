@@ -10,6 +10,61 @@ export type TransactionRow = Database['public']['Tables']['transactions']['Row']
 export type TransactionInsert = Database['public']['Tables']['transactions']['Insert'];
 export type TransactionUpdate = Database['public']['Tables']['transactions']['Update'];
 
+export type ShoppingListRow = Database['public']['Tables']['shopping_lists']['Row'];
+export type ShoppingListInsert = Database['public']['Tables']['shopping_lists']['Insert'];
+export type ShoppingListUpdate = Database['public']['Tables']['shopping_lists']['Update'];
+
+export type ListItemRow = Database['public']['Tables']['list_items']['Row'];
+export type ListItemInsert = Database['public']['Tables']['list_items']['Insert'];
+export type ListItemUpdate = Database['public']['Tables']['list_items']['Update'];
+
+export type RecurringTransactionRow = Database['public']['Tables']['recurring_transactions']['Row'];
+export type RecurringTransactionInsert = Database['public']['Tables']['recurring_transactions']['Insert'];
+export type RecurringTransactionUpdate = Database['public']['Tables']['recurring_transactions']['Update'];
+
+// Planned Expense types (defined manually until Supabase types are regenerated)
+export interface PlannedExpenseRow {
+	id: string;
+	name: string;
+	amount: number;
+	category_id: string;
+	subcategory: string | null;
+	note: string | null;
+	due_date: string;
+	priority: 'low' | 'medium' | 'high' | 'urgent';
+	status: 'planned' | 'confirmed' | 'completed' | 'cancelled';
+	user_id: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface PlannedExpenseInsert {
+	id?: string;
+	name: string;
+	amount: number;
+	category_id: string;
+	subcategory?: string | null;
+	note?: string | null;
+	due_date: string;
+	priority?: 'low' | 'medium' | 'high' | 'urgent';
+	status?: 'planned' | 'confirmed' | 'completed' | 'cancelled';
+	user_id?: string | null;
+	created_at?: string;
+	updated_at?: string;
+}
+
+export interface PlannedExpenseUpdate {
+	name?: string;
+	amount?: number;
+	category_id?: string;
+	subcategory?: string | null;
+	note?: string | null;
+	due_date?: string;
+	priority?: 'low' | 'medium' | 'high' | 'urgent';
+	status?: 'planned' | 'confirmed' | 'completed' | 'cancelled';
+	updated_at?: string;
+}
+
 // Legacy types for backward compatibility (mapped to Supabase types)
 export interface CategoryDocument extends CategoryRow {
 	type: TransactionType;
@@ -18,7 +73,23 @@ export interface TransactionDocument extends TransactionRow {
 	type: TransactionType;
 }
 
+export type ShoppingListDocument = ShoppingListRow;
+export type ListItemDocument = ListItemRow;
+
 export type CreateCategoryInput = CategoryInsert;
 export type CreateTransactionInput = TransactionInsert;
 export type UpdateCategoryInput = CategoryUpdate;
 export type UpdateTransactionInput = TransactionUpdate;
+
+export type CreateShoppingListInput = ShoppingListInsert;
+export type UpdateShoppingListInput = ShoppingListUpdate;
+export type CreateListItemInput = ListItemInsert;
+export type UpdateListItemInput = ListItemUpdate;
+
+export type RecurringTransactionDocument = RecurringTransactionRow;
+export type CreateRecurringTransactionInput = RecurringTransactionInsert;
+export type UpdateRecurringTransactionInput = RecurringTransactionUpdate;
+
+export type PlannedExpenseDocument = PlannedExpenseRow;
+export type CreatePlannedExpenseInput = PlannedExpenseInsert;
+export type UpdatePlannedExpenseInput = PlannedExpenseUpdate;

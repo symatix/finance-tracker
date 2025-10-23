@@ -2,10 +2,16 @@ import { create } from 'zustand';
 import {
 	CategoryOperations,
 	TransactionOperations,
+	RecurringTransactionOperations,
+	PlannedExpenseOperations,
 	type CategoryDocument,
 	type TransactionDocument,
+	type RecurringTransactionDocument,
+	type PlannedExpenseDocument,
 	type CreateCategoryInput,
 	type CreateTransactionInput,
+	type CreateRecurringTransactionInput,
+	type CreatePlannedExpenseInput,
 } from '../db';
 
 // ---------- Types ----------
@@ -37,6 +43,8 @@ export interface Settings {
 export interface BudgetState {
 	transactions: Transaction[];
 	categories: Category[];
+	recurringTransactions: Array<RecurringTransactionDocument & { categoryName?: string; categoryType?: string }>;
+	plannedExpenses: Array<PlannedExpenseDocument & { categoryName?: string; categoryType?: string }>;
 	settings: Settings;
 	isLoading: boolean;
 	error: string | null;
@@ -53,6 +61,29 @@ export interface BudgetStore extends BudgetState {
 	updateTransaction: (userId: string, id: string, updates: Partial<Transaction>) => Promise<void>;
 	deleteTransaction: (userId: string, id: string) => Promise<void>;
 	loadTransactions: (userId: string) => Promise<void>;
+
+	// Recurring transaction methods
+	addRecurringTransaction: (userId: string, recurring: CreateRecurringTransactionInput) => Promise<void>;
+	updateRecurringTransaction: (
+		userId: string,
+		id: string,
+		updates: Partial<RecurringTransactionDocument>
+	) => Promise<void>;
+	deleteRecurringTransaction: (userId: string, id: string) => Promise<void>;
+	loadRecurringTransactions: (userId: string) => Promise<void>;
+	processDueRecurringTransactions: (userId: string) => Promise<void>;
+
+	// Planned expense methods
+	addPlannedExpense: (userId: string, plannedExpense: CreatePlannedExpenseInput) => Promise<void>;
+	updatePlannedExpense: (userId: string, id: string, updates: Partial<PlannedExpenseDocument>) => Promise<void>;
+	deletePlannedExpense: (userId: string, id: string) => Promise<void>;
+	loadPlannedExpenses: (userId: string) => Promise<void>;
+	convertPlannedExpenseToTransaction: (
+		userId: string,
+		id: string,
+		actualAmount?: number,
+		actualDate?: string
+	) => Promise<void>;
 
 	// Category methods (now async)
 	addCategory: (userId: string, category: Omit<Category, 'id'>) => Promise<void>;
@@ -104,6 +135,8 @@ const documentToCategory = (doc: CategoryDocument): Category => ({
 export const useBudgetStore = create<BudgetStore>((set, get) => ({
 	transactions: [],
 	categories: [],
+	recurringTransactions: [],
+	plannedExpenses: [],
 	settings: {
 		monthlyBudget: 0,
 		theme: 'light',
@@ -120,6 +153,8 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 			// Load initial data
 			await get().loadCategories(userId);
 			await get().loadTransactions(userId);
+			await get().loadRecurringTransactions(userId);
+			await get().loadPlannedExpenses(userId);
 
 			set({ isInitialized: true, isLoading: false });
 		} catch (error) {
@@ -220,6 +255,216 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 			console.error('Failed to load transactions:', error);
 			set({
 				error: error instanceof Error ? error.message : 'Failed to load transactions',
+			});
+		}
+	},
+
+	// ----- Recurring Transaction Methods -----
+	addRecurringTransaction: async (userId: string, recurring) => {
+		try {
+			set({ isLoading: true, error: null });
+
+			const recurringData: CreateRecurringTransactionInput = {
+				...recurring,
+				user_id: userId,
+			};
+
+			const createdDoc = await RecurringTransactionOperations.create(recurringData);
+
+			set((state) => ({
+				recurringTransactions: [...state.recurringTransactions, createdDoc],
+				isLoading: false,
+			}));
+		} catch (error) {
+			console.error('Failed to add recurring transaction:', error);
+			set({
+				error: error instanceof Error ? error.message : 'Failed to add recurring transaction',
+				isLoading: false,
+			});
+		}
+	},
+
+	updateRecurringTransaction: async (userId: string, id, updates) => {
+		try {
+			set({ isLoading: true, error: null });
+
+			const updateData: Partial<CreateRecurringTransactionInput> = {};
+			if (updates.name !== undefined) updateData.name = updates.name;
+			if (updates.amount !== undefined) updateData.amount = updates.amount;
+			if (updates.type !== undefined) updateData.type = updates.type;
+			if (updates.category_id !== undefined) updateData.category_id = updates.category_id;
+			if (updates.subcategory !== undefined) updateData.subcategory = updates.subcategory;
+			if (updates.note !== undefined) updateData.note = updates.note;
+			if (updates.frequency !== undefined) updateData.frequency = updates.frequency;
+			if (updates.start_date !== undefined) updateData.start_date = updates.start_date;
+			if (updates.end_date !== undefined) updateData.end_date = updates.end_date;
+			if (updates.next_due_date !== undefined) updateData.next_due_date = updates.next_due_date;
+			if (updates.is_active !== undefined) updateData.is_active = updates.is_active;
+
+			const updatedDoc = await RecurringTransactionOperations.update(id, updateData, userId);
+			if (updatedDoc) {
+				set((state) => ({
+					recurringTransactions: state.recurringTransactions.map((r) => (r.id === id ? updatedDoc : r)),
+					isLoading: false,
+				}));
+			}
+		} catch (error) {
+			console.error('Failed to update recurring transaction:', error);
+			set({
+				error: error instanceof Error ? error.message : 'Failed to update recurring transaction',
+				isLoading: false,
+			});
+		}
+	},
+
+	deleteRecurringTransaction: async (userId: string, id) => {
+		try {
+			set({ isLoading: true, error: null });
+
+			const success = await RecurringTransactionOperations.delete(id, userId);
+			if (success) {
+				set((state) => ({
+					recurringTransactions: state.recurringTransactions.filter((r) => r.id !== id),
+					isLoading: false,
+				}));
+			}
+		} catch (error) {
+			console.error('Failed to delete recurring transaction:', error);
+			set({
+				error: error instanceof Error ? error.message : 'Failed to delete recurring transaction',
+				isLoading: false,
+			});
+		}
+	},
+
+	loadRecurringTransactions: async (userId: string) => {
+		try {
+			const recurringDocs = await RecurringTransactionOperations.findWithCategoryDetails(userId);
+			set({ recurringTransactions: recurringDocs });
+		} catch (error) {
+			console.error('Failed to load recurring transactions:', error);
+			set({
+				error: error instanceof Error ? error.message : 'Failed to load recurring transactions',
+			});
+		}
+	},
+
+	processDueRecurringTransactions: async (userId: string) => {
+		try {
+			await RecurringTransactionOperations.processDueTransactions(userId);
+			// Reload transactions and recurring transactions to reflect changes
+			await get().loadTransactions(userId);
+			await get().loadRecurringTransactions(userId);
+		} catch (error) {
+			console.error('Failed to process due recurring transactions:', error);
+			set({
+				error: error instanceof Error ? error.message : 'Failed to process due recurring transactions',
+			});
+		}
+	},
+
+	// ----- Planned Expense Methods -----
+	addPlannedExpense: async (userId: string, plannedExpense) => {
+		try {
+			set({ isLoading: true, error: null });
+
+			const plannedExpenseData: CreatePlannedExpenseInput = {
+				...plannedExpense,
+				user_id: userId,
+			};
+
+			const createdDoc = await PlannedExpenseOperations.create(plannedExpenseData);
+
+			set((state) => ({
+				plannedExpenses: [...state.plannedExpenses, createdDoc],
+				isLoading: false,
+			}));
+		} catch (error) {
+			console.error('Failed to add planned expense:', error);
+			set({
+				error: error instanceof Error ? error.message : 'Failed to add planned expense',
+				isLoading: false,
+			});
+		}
+	},
+
+	updatePlannedExpense: async (userId: string, id, updates) => {
+		try {
+			set({ isLoading: true, error: null });
+
+			const updateData: Partial<CreatePlannedExpenseInput> = {};
+			if (updates.name !== undefined) updateData.name = updates.name;
+			if (updates.amount !== undefined) updateData.amount = updates.amount;
+			if (updates.category_id !== undefined) updateData.category_id = updates.category_id;
+			if (updates.subcategory !== undefined) updateData.subcategory = updates.subcategory;
+			if (updates.note !== undefined) updateData.note = updates.note;
+			if (updates.due_date !== undefined) updateData.due_date = updates.due_date;
+			if (updates.priority !== undefined) updateData.priority = updates.priority;
+			if (updates.status !== undefined) updateData.status = updates.status;
+
+			const updatedDoc = await PlannedExpenseOperations.update(id, updateData, userId);
+			if (updatedDoc) {
+				set((state) => ({
+					plannedExpenses: state.plannedExpenses.map((p) => (p.id === id ? updatedDoc : p)),
+					isLoading: false,
+				}));
+			}
+		} catch (error) {
+			console.error('Failed to update planned expense:', error);
+			set({
+				error: error instanceof Error ? error.message : 'Failed to update planned expense',
+				isLoading: false,
+			});
+		}
+	},
+
+	deletePlannedExpense: async (userId: string, id) => {
+		try {
+			set({ isLoading: true, error: null });
+
+			const success = await PlannedExpenseOperations.delete(id, userId);
+			if (success) {
+				set((state) => ({
+					plannedExpenses: state.plannedExpenses.filter((p) => p.id !== id),
+					isLoading: false,
+				}));
+			}
+		} catch (error) {
+			console.error('Failed to delete planned expense:', error);
+			set({
+				error: error instanceof Error ? error.message : 'Failed to delete planned expense',
+				isLoading: false,
+			});
+		}
+	},
+
+	loadPlannedExpenses: async (userId: string) => {
+		try {
+			const plannedExpenseDocs = await PlannedExpenseOperations.findWithCategoryDetails(userId);
+			set({ plannedExpenses: plannedExpenseDocs });
+		} catch (error) {
+			console.error('Failed to load planned expenses:', error);
+			set({
+				error: error instanceof Error ? error.message : 'Failed to load planned expenses',
+			});
+		}
+	},
+
+	convertPlannedExpenseToTransaction: async (userId: string, id, actualAmount, actualDate) => {
+		try {
+			set({ isLoading: true, error: null });
+
+			await PlannedExpenseOperations.convertToTransaction(id, userId, actualAmount, actualDate);
+			// Reload both planned expenses and transactions to reflect changes
+			await get().loadPlannedExpenses(userId);
+			await get().loadTransactions(userId);
+
+			set({ isLoading: false });
+		} catch (error) {
+			console.error('Failed to convert planned expense to transaction:', error);
+			set({
+				error: error instanceof Error ? error.message : 'Failed to convert planned expense to transaction',
+				isLoading: false,
 			});
 		}
 	},
@@ -411,6 +656,8 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 			set({
 				transactions: [],
 				categories: [],
+				recurringTransactions: [],
+				plannedExpenses: [],
 				settings: { monthlyBudget: 0, theme: 'light' },
 				isLoading: false,
 			});

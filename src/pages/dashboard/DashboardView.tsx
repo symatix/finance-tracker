@@ -1,12 +1,15 @@
 import { Box, Typography, Divider, Stack } from '@mui/material';
 import { useMonthYearFilter } from './hooks/useMonthYearFilter';
 import { useDashboardData } from './hooks/useDashboardData';
+import { useBudgetAlerts } from '../../hooks/useBudgetAlerts';
 import { MonthYearFilter } from './components/MonthYearFilter';
 import { SummaryCards } from './components/SummaryCards';
 import { ChartsSection } from './components/ChartsSection';
+import { BudgetAlertsSection } from './components/BudgetAlertsSection';
 
 export default function DashboardView() {
 	const { selectedMonth, selectedYear, setSelectedMonth, setSelectedYear } = useMonthYearFilter();
+	const { alerts } = useBudgetAlerts();
 
 	const {
 		totalIncome,
@@ -16,6 +19,9 @@ export default function DashboardView() {
 		availablePerDay,
 		categoryBreakdown,
 		incomeVsExpensesData,
+		dailySpendingTrends,
+		activeShoppingListsCount,
+		monthlyPlannedExpensesTotal,
 	} = useDashboardData(selectedMonth, selectedYear);
 
 	return (
@@ -45,9 +51,17 @@ export default function DashboardView() {
 				totalSavings={totalSavings}
 				balance={balance}
 				availablePerDay={availablePerDay}
+				activeShoppingListsCount={activeShoppingListsCount}
+				monthlyPlannedExpensesTotal={monthlyPlannedExpensesTotal}
 			/>
 
-			<ChartsSection incomeVsExpensesData={incomeVsExpensesData} categoryBreakdown={categoryBreakdown} />
+			<BudgetAlertsSection alerts={alerts} />
+
+			<ChartsSection
+				incomeVsExpensesData={incomeVsExpensesData}
+				categoryBreakdown={categoryBreakdown}
+				dailySpendingTrends={dailySpendingTrends}
+			/>
 		</Box>
 	);
 }

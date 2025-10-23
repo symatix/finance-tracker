@@ -52,8 +52,39 @@ npm install
 
 1. Create a new project at [supabase.com](https://supabase.com)
 2. Go to your project's SQL Editor
-3. Run the SQL from `supabase-schema.sql` to create tables and sample data
+3. Run the SQL from `supabase-schema.sql` to create tables, functions, and sample data
 4. Get your project URL and anon key from Settings > API
+
+### 3. Set Up Automatic Recurring Transaction Processing
+
+The app includes automatic processing of recurring transactions. To enable this:
+
+**Option A: Supabase Edge Function (Recommended)**
+
+1. Create an Edge Function in your Supabase dashboard called `process-recurring`
+2. Copy the code from `db.supabase.edge-function.js`
+3. **Set up scheduling:**
+    - If you have **Cron** in Edge Functions menu: Create daily cron job at `0 2 * * *`
+    - If no Cron: Use **Option B** (manual) or **Option C** (external service)
+4. The function will automatically create transactions for due recurring items
+
+**Option B: Manual Processing** Call the function manually when needed:
+
+```sql
+SELECT * FROM process_recurring_transactions();
+```
+
+**Option D: Database Function Cron Job**
+
+If your Supabase plan supports database-level cron jobs:
+
+1. Set up a cron job that calls the SQL function directly:
+    ```sql
+    SELECT * FROM process_recurring_transactions();
+    ```
+2. Schedule it to run daily (e.g., `0 2 * * *` for 2 AM daily)
+
+**Note**: `calculate_next_due_date` is a helper function - don't call it directly for cron jobs.
 
 ### 3. Environment Configuration
 
@@ -95,3 +126,11 @@ See `supabase-schema.sql` for the complete schema definition.
 -   **Database Layer**: Clean separation between UI and database operations
 -   **Type Safety**: Full TypeScript coverage with proper type definitions
 -   **State Management**: Centralized state with Zustand, async operations with loading states
+
+## Planned features
+
+-   **Goal-Based Savings**: Set savings goals with progress tracking and auto-allocations.
+-   **Collaboration & Sharing**: Multi-user lists and shared accounts for families.
+-   **Gamification & Motivation**: Badges and challenges for financial goals.
+-   **Advanced Analytics & Insights**: AI-driven spending insights and trend analysis.
+-   **Automation & Integrations**: Bank sync, voice commands, and third-party app connections.
