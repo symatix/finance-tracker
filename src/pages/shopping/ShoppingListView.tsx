@@ -8,6 +8,7 @@ import AddIcon from '@mui/icons-material/Add';
 import type { ShoppingListDocument } from '../../db';
 import { ShoppingListOperations } from '../../db';
 import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { useBudgetStore } from '../../store';
 
 export default function ShoppingListView() {
 	const { user } = useAuth();
@@ -71,7 +72,24 @@ export default function ShoppingListView() {
 	const handleCompleteList = async (listId: string, totalAmount: number) => {
 		if (!user) return;
 		try {
-			await ShoppingListOperations.completeList(listId, totalAmount, user.id);
+			const result = await ShoppingListOperations.completeList(listId, totalAmount, user.id);
+			if (result) {
+				// Add the created transaction to the global store state
+				useBudgetStore.setState((state) => ({
+					transactions: [
+						...state.transactions,
+						{
+							id: result.transaction.id,
+							type: result.transaction.type,
+							amount: result.transaction.amount,
+							categoryId: result.transaction.category_id,
+							subcategory: result.transaction.subcategory,
+							note: result.transaction.note,
+							date: result.transaction.date,
+						},
+					],
+				}));
+			}
 			// Refresh lists
 			await refetch();
 		} catch (error) {
@@ -87,13 +105,18 @@ export default function ShoppingListView() {
 			<Stack
 				direction={{ xs: 'column', sm: 'row' }}
 				justifyContent={{ xs: 'flex-start', sm: 'space-between' }}
-				alignItems='center'
+				alignItems={{ xs: 'flex-start', sm: 'center' }}
 				mb={1}
 				spacing={2}
 			>
 				<Typography variant='h5'>Shopping Lists</Typography>
-				<Stack direction='row' spacing={2} alignItems='center'>
-					<FormControl size='small' sx={{ minWidth: 120 }}>
+				<Stack
+					direction={{ xs: 'column', sm: 'row' }}
+					spacing={2}
+					alignItems='center'
+					width={{ xs: '100%', sm: 'auto' }}
+				>
+					<FormControl size='small' sx={{ minWidth: 120, width: { xs: '100%', sm: 'auto' } }}>
 						<InputLabel>Filter</InputLabel>
 						<Select
 							value={listFilter}
@@ -105,7 +128,12 @@ export default function ShoppingListView() {
 							<MenuItem value='all'>All</MenuItem>
 						</Select>
 					</FormControl>
-					<Button variant='contained' startIcon={<AddIcon />} onClick={handleCreateList}>
+					<Button
+						variant='contained'
+						startIcon={<AddIcon />}
+						onClick={handleCreateList}
+						sx={{ width: { xs: '100%', sm: 'auto' } }}
+					>
 						New List
 					</Button>
 				</Stack>
