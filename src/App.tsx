@@ -13,6 +13,7 @@ const CategoryPage = lazy(() => import('./pages/category'));
 const ShoppingPage = lazy(() => import('./pages/shopping').then((module) => ({ default: module.default })));
 const RecurringPage = lazy(() => import('./pages/recurring').then((module) => ({ default: module.default })));
 const PlannedPage = lazy(() => import('./pages/planned').then((module) => ({ default: module.default })));
+const HelpPage = lazy(() => import('./pages/help').then((module) => ({ default: module.default })));
 
 function AppContent() {
 	const { user, loading: authLoading } = useAuth();
@@ -63,6 +64,7 @@ function AppContent() {
 				<Route path='/shopping' element={<ShoppingPage />} />
 				<Route path='/recurring' element={<RecurringPage />} />
 				<Route path='/planned' element={<PlannedPage />} />
+				<Route path='/help' element={<HelpPage />} />
 				{/* Fallback */}
 				<Route path='*' element={<Navigate to='/dashboard' replace />} />
 			</Routes>

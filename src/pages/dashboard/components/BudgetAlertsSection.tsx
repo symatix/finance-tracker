@@ -32,7 +32,12 @@ export function BudgetAlertsSection({ alerts }: BudgetAlertsSectionProps) {
 			</Typography>
 			<Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
 				{alerts.map((alert, index) => (
-					<Alert key={index} severity={alert.type === 'danger' ? 'error' : alert.type} variant='outlined' sx={{ mb: 1 }}>
+					<Alert
+						key={index}
+						severity={alert.type === 'danger' ? 'error' : alert.type}
+						variant='outlined'
+						sx={{ mb: 1 }}
+					>
 						{alert.message}
 						{alert.dueDate && (
 							<Typography variant='caption' display='block' sx={{ mt: 0.5 }}>

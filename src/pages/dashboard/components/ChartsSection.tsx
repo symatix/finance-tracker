@@ -27,7 +27,7 @@ export function ChartsSection({ incomeVsExpensesData, categoryBreakdown, dailySp
 	return (
 		<Card sx={{ p: 2, mb: 3 }}>
 			<Grid container spacing={4}>
-				<Grid size={4}>
+				<Grid size={{ md: 4, sm: 12 }}>
 					<Typography variant='h6' fontWeight='bold' mb={2}>
 						Income vs Expenses
 					</Typography>
@@ -53,7 +53,7 @@ export function ChartsSection({ incomeVsExpensesData, categoryBreakdown, dailySp
 						</BarChart>
 					</ResponsiveContainer>
 				</Grid>
-				<Grid size={4}>
+				<Grid size={{ md: 4, sm: 12 }}>
 					<Typography variant='h6' fontWeight='bold' mb={2}>
 						Daily Spending Trends
 					</Typography>
@@ -68,7 +68,7 @@ export function ChartsSection({ incomeVsExpensesData, categoryBreakdown, dailySp
 						</LineChart>
 					</ResponsiveContainer>
 				</Grid>
-				<Grid size={4}>
+				<Grid size={{ md: 4, sm: 12 }}>
 					<Typography variant='h6' fontWeight='bold' mb={2}>
 						Expense Breakdown by Category
 					</Typography>

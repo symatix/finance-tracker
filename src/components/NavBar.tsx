@@ -17,7 +17,7 @@ import {
 	useTheme,
 	useMediaQuery,
 } from '@mui/material';
-import { AccountBalance, Menu as MenuIcon, Logout, Person, KeyboardArrowDown } from '@mui/icons-material';
+import { AccountBalance, Menu as MenuIcon, Logout, Person, KeyboardArrowDown, Help } from '@mui/icons-material';
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -88,6 +88,22 @@ export const NavBar = () => {
 						</ListItemButton>
 					</ListItem>
 				))}
+				<ListItem disablePadding>
+					<ListItemButton
+						component={Link}
+						to='/help'
+						sx={{
+							textAlign: 'center',
+							color: 'text.primary',
+							'&:hover': {
+								backgroundColor: 'action.hover',
+							},
+						}}
+					>
+						<Help sx={{ mr: 1 }} />
+						<ListItemText primary='Help & Guide' />
+					</ListItemButton>
+				</ListItem>
 				<ListItem disablePadding>
 					<ListItemButton
 						onClick={handleLogout}
@@ -219,6 +235,16 @@ export const NavBar = () => {
 								<MenuItem disabled sx={{ opacity: 1, fontSize: '0.875rem', color: 'text.secondary' }}>
 									<Person sx={{ mr: 1, fontSize: '1rem' }} />
 									{user?.email}
+								</MenuItem>
+								<MenuItem
+									onClick={() => {
+										handleUserMenuClose();
+										navigate('/help');
+									}}
+									sx={{ fontSize: '0.875rem' }}
+								>
+									<Help sx={{ mr: 1, fontSize: '1rem' }} />
+									Help & Guide
 								</MenuItem>
 								<MenuItem onClick={handleLogout} sx={{ fontSize: '0.875rem' }}>
 									<Logout sx={{ mr: 1, fontSize: '1rem' }} />
