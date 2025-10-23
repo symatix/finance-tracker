@@ -13,8 +13,8 @@ export function MonthYearFilter({ selectedMonth, selectedYear, onMonthChange, on
 	const years = Array.from({ length: YEARS_COUNT }, (_, i) => currentYear - i);
 
 	return (
-		<Box display='flex' gap={2} mb={3}>
-			<FormControl size='small'>
+		<Box display='flex' gap={2} mb={0}>
+			<FormControl size='small' sx={{ minWidth: 120, marginBottom: 0, width: { xs: '100%', sm: 'auto' } }}>
 				<InputLabel>Month</InputLabel>
 				<Select
 					value={selectedMonth}
@@ -30,7 +30,7 @@ export function MonthYearFilter({ selectedMonth, selectedYear, onMonthChange, on
 				</Select>
 			</FormControl>
 
-			<FormControl size='small'>
+			<FormControl size='small' sx={{ minWidth: 120, marginBottom: 0, width: { xs: '100%', sm: 'auto' } }}>
 				<InputLabel>Year</InputLabel>
 				<Select
 					value={selectedYear}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, Stack } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import { TransactionModal } from './TransactionModel';
 import { useBudgetStore } from '../../../store';
 import { useAuth } from '../../../hooks/useAuth';
@@ -47,13 +48,31 @@ export default function TransactionActions() {
 	return (
 		<>
 			<Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent='flex-end'>
-				<Button variant='outlined' color='info' onClick={() => handleOpenModal('Income')} disabled={isLoading}>
+				<Button
+					variant='contained'
+					startIcon={<AddIcon />}
+					color='info'
+					onClick={() => handleOpenModal('Income')}
+					disabled={isLoading}
+				>
 					Add Income
 				</Button>
-				<Button variant='outlined' color='info' onClick={() => handleOpenModal('Expense')} disabled={isLoading}>
+				<Button
+					variant='contained'
+					startIcon={<AddIcon />}
+					color='info'
+					onClick={() => handleOpenModal('Expense')}
+					disabled={isLoading}
+				>
 					Add Expense
 				</Button>
-				<Button variant='outlined' color='info' onClick={() => handleOpenModal('Savings')} disabled={isLoading}>
+				<Button
+					variant='contained'
+					startIcon={<AddIcon />}
+					color='info'
+					onClick={() => handleOpenModal('Savings')}
+					disabled={isLoading}
+				>
 					Add Savings
 				</Button>
 			</Stack>

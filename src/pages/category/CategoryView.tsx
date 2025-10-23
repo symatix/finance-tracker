@@ -1,4 +1,5 @@
 import { Box, Stack, Button, Typography, Divider } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import { useBudgetStore } from '../../store/store';
 import { useCategoryTable } from './hooks/useCategoryTable';
 import { CategoryTable } from './components/CategoryTable';
@@ -55,7 +56,13 @@ export default function CategoryView() {
 			>
 				<Typography variant='h5'>Categories</Typography>
 				<Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent='flex-end'>
-					<Button variant='outlined' color='primary' onClick={openAddModal} disabled={isLoading}>
+					<Button
+						variant='contained'
+						startIcon={<AddIcon />}
+						color='primary'
+						onClick={openAddModal}
+						disabled={isLoading}
+					>
 						{isLoading ? 'Loading...' : 'Add Category'}
 					</Button>
 				</Stack>

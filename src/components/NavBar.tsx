@@ -33,9 +33,9 @@ export const NavBar = () => {
 	const navItems = [
 		{ label: 'Dashboard', path: '/dashboard' },
 		{ label: 'Transactions', path: '/transactions' },
-		{ label: 'Categories', path: '/categories' },
-		{ label: 'Shopping', path: '/shopping' },
 		{ label: 'Recurring', path: '/recurring' },
+		{ label: 'Shopping', path: '/shopping' },
+		{ label: 'Categories', path: '/categories' },
 	];
 
 	const handleDrawerToggle = () => {
