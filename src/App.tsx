@@ -10,6 +10,7 @@ import { useBudgetStore } from './store';
 const DashboardPage = lazy(() => import('./pages/dashboard'));
 const TransactionPage = lazy(() => import('./pages/details'));
 const CategoryPage = lazy(() => import('./pages/category'));
+const ShoppingPage = lazy(() => import('./pages/shopping').then((module) => ({ default: module.default })));
 
 function AppContent() {
 	const { user, loading: authLoading } = useAuth();
@@ -57,6 +58,7 @@ function AppContent() {
 				<Route path='/dashboard' element={<DashboardPage />} />
 				<Route path='/transactions' element={<TransactionPage />} />
 				<Route path='/categories' element={<CategoryPage />} />
+				<Route path='/shopping' element={<ShoppingPage />} />
 				{/* Fallback */}
 				<Route path='*' element={<Navigate to='/dashboard' replace />} />
 			</Routes>

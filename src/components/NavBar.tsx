@@ -34,6 +34,7 @@ export const NavBar = () => {
 		{ label: 'Dashboard', path: '/dashboard' },
 		{ label: 'Transactions', path: '/transactions' },
 		{ label: 'Categories', path: '/categories' },
+		{ label: 'Shopping', path: '/shopping' },
 	];
 
 	const handleDrawerToggle = () => {

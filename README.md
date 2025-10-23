@@ -95,3 +95,23 @@ See `supabase-schema.sql` for the complete schema definition.
 -   **Database Layer**: Clean separation between UI and database operations
 -   **Type Safety**: Full TypeScript coverage with proper type definitions
 -   **State Management**: Centralized state with Zustand, async operations with loading states
+
+## Planned features
+
+### Core Expansions
+
+-   **Planned Expenses & Budget Alerts**: Create planned expense lists with estimated costs, due dates, and budget alerts.
+-   **Shopping List Integration**: Build categorized shopping lists that convert to transactions upon completion.
+-   **Recurring & Subscription Tracking**: Manage recurring expenses and optimize subscriptions.
+
+### Additional Features
+
+-   **Goal-Based Savings**: Set savings goals with progress tracking and auto-allocations.
+-   **Advanced Analytics & Insights**: AI-driven spending insights and trend analysis.
+-   **Collaboration & Sharing**: Multi-user lists and shared accounts for families.
+-   **Automation & Integrations**: Bank sync, voice commands, and third-party app connections.
+-   **Gamification & Motivation**: Badges and challenges for financial goals.
+
+## BUGS
+
+-   Savings can't have negative value so it is not possible to use those funds
