@@ -33,6 +33,8 @@ interface SummaryCardsProps {
 	totalSavings: number;
 	balance: number;
 	availablePerDay: number;
+	activeShoppingListsCount: number;
+	monthlyPlannedExpensesTotal: number;
 }
 
 export function SummaryCards({
@@ -41,6 +43,8 @@ export function SummaryCards({
 	totalSavings,
 	balance,
 	availablePerDay,
+	activeShoppingListsCount,
+	monthlyPlannedExpensesTotal,
 }: SummaryCardsProps) {
 	return (
 		<Grid container spacing={3} mb={3}>
@@ -72,6 +76,26 @@ export function SummaryCards({
 				value={formatCurrency(availablePerDay)}
 				color='warning.main'
 				borderColor='#f9a825'
+			/>
+			<SummaryCard
+				title={
+					<>
+						Active <small>Shopping Lists</small>
+					</>
+				}
+				value={activeShoppingListsCount.toString()}
+				color='secondary.main'
+				borderColor='#9c27b0'
+			/>
+			<SummaryCard
+				title={
+					<>
+						Planned <small>Expenses</small>
+					</>
+				}
+				value={formatCurrency(monthlyPlannedExpensesTotal)}
+				color='info.main'
+				borderColor='#0288d1'
 			/>
 		</Grid>
 	);
