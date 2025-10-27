@@ -23,8 +23,11 @@ import {
 	AccountBalance,
 	Help,
 	Info,
-	Warning,
 	CheckCircle,
+	Group,
+	PersonAdd,
+	AdminPanelSettings,
+	Email,
 } from '@mui/icons-material';
 
 export default function HelpPage() {
@@ -319,32 +322,123 @@ export default function HelpPage() {
 			),
 		},
 		{
-			title: 'Budget Alerts',
-			icon: <Warning color='primary' />,
+			title: 'Account Management & Collaboration',
+			icon: <Group color='primary' />,
 			content: (
 				<Box>
 					<Typography variant='body1' paragraph>
-						The system automatically monitors your finances and provides important alerts and warnings.
+						FinanceTracker supports multi-user collaboration through shared accounts (families/households).
+						Invite family members to collaborate on financial management with role-based permissions.
 					</Typography>
 					<Typography variant='h6' gutterBottom>
-						Alert Types:
+						Creating Accounts:
 					</Typography>
 					<List dense>
 						<ListItem>
-							<ListItemText primary='Balance Warnings - When planned expenses exceed available funds' />
+							<ListItemText primary='Create a new account (family/household) from the Account Management page' />
 						</ListItem>
 						<ListItem>
-							<ListItemText primary='Upcoming Expenses - Notifications for expenses due soon' />
+							<ListItemText primary='Set account name and description' />
 						</ListItem>
 						<ListItem>
-							<ListItemText primary='Overdue Payments - Alerts for missed expense due dates' />
-						</ListItem>
-						<ListItem>
-							<ListItemText primary='Daily Spending Impact - Warnings about budget constraints' />
+							<ListItemText primary='You become the account owner with full permissions' />
 						</ListItem>
 					</List>
-					<Typography variant='body2' color='text.secondary'>
-						Alerts appear on the dashboard and help you make informed financial decisions.
+					<Typography variant='h6' gutterBottom>
+						User Roles & Permissions:
+					</Typography>
+					<List dense>
+						<ListItem>
+							<ListItemIcon>
+								<AdminPanelSettings color='primary' />
+							</ListItemIcon>
+							<ListItemText
+								primary='Owner - Full control, manage members, edit/delete account'
+								secondary='Can invite new members, change roles, delete the account'
+							/>
+						</ListItem>
+						<ListItem>
+							<ListItemIcon>
+								<AdminPanelSettings color='secondary' />
+							</ListItemIcon>
+							<ListItemText
+								primary='Admin - Manage members and content'
+								secondary='Can invite members, manage transactions, but cannot delete account'
+							/>
+						</ListItem>
+						<ListItem>
+							<ListItemText
+								primary='Member - Read/write access'
+								secondary='Can view and create transactions, shopping lists, etc.'
+							/>
+						</ListItem>
+						<ListItem>
+							<ListItemText
+								primary='Viewer - Read-only access'
+								secondary='Can view all data but cannot make changes'
+							/>
+						</ListItem>
+					</List>
+					<Typography variant='h6' gutterBottom>
+						Inviting Members:
+					</Typography>
+					<List dense>
+						<ListItem>
+							<ListItemIcon>
+								<PersonAdd color='primary' />
+							</ListItemIcon>
+							<ListItemText primary='Click "Add Member" to send email invitations' />
+						</ListItem>
+						<ListItem>
+							<ListItemText primary='Choose appropriate role for each invitee' />
+						</ListItem>
+						<ListItem>
+							<ListItemIcon>
+								<Email color='primary' />
+							</ListItemIcon>
+							<ListItemText primary='Secure email invitations with 7-day expiration' />
+						</ListItem>
+						<ListItem>
+							<ListItemText primary='Recipients click invitation link to join' />
+						</ListItem>
+					</List>
+					<Typography variant='h6' gutterBottom>
+						Managing Members:
+					</Typography>
+					<List dense>
+						<ListItem>
+							<ListItemText primary='View all account members in a table format' />
+						</ListItem>
+						<ListItem>
+							<ListItemText primary='Change member roles (owner/admin only)' />
+						</ListItem>
+						<ListItem>
+							<ListItemText primary='Remove members from the account' />
+						</ListItem>
+						<ListItem>
+							<ListItemText primary='Monitor pending invitations' />
+						</ListItem>
+					</List>
+					<Typography variant='h6' gutterBottom>
+						Shared vs Private Data:
+					</Typography>
+					<List dense>
+						<ListItem>
+							<ListItemText
+								primary='Shared Resources - Categories, transactions, lists accessible to all members'
+								secondary='Based on account membership and role permissions'
+							/>
+						</ListItem>
+						<ListItem>
+							<ListItemText
+								primary='Private Resources - Personal categories remain creator-only'
+								secondary='Only the creator can view/edit their private items'
+							/>
+						</ListItem>
+					</List>
+					<Typography variant='body2' color='text.secondary' sx={{ mt: 2 }}>
+						Note: Account owners can edit account details and delete the entire account. All members will
+						lose access to shared resources when an account is deleted.
 					</Typography>
 				</Box>
 			),
@@ -426,7 +520,7 @@ export default function HelpPage() {
 						<Chip label='Shopping Lists' size='small' color='primary' variant='outlined' />
 						<Chip label='Recurring Transactions' size='small' color='primary' variant='outlined' />
 						<Chip label='Planned Expenses' size='small' color='primary' variant='outlined' />
-						<Chip label='Budget Alerts' size='small' color='primary' variant='outlined' />
+						<Chip label='Account Management' size='small' color='primary' variant='outlined' />
 					</Box>
 				</CardContent>
 			</Card>
