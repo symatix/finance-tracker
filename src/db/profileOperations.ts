@@ -22,16 +22,42 @@ export class ProfileOperations {
 
 	// Get profile by user ID
 	static async findByUserId(userId: string): Promise<ProfileDocument | null> {
-		const { data, error } = await supabase.from('profiles').select('*').eq('user_id', userId).single();
-
-		if (error) {
-			if (error.code === 'PGRST116') return null; // Not found
+		console.log('ProfileOperations.findByUserId called with userId:', userId);
+		
+		// Try using fetch directly to bypass supabase client issues
+		const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+		const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+		
+		const url = `${supabaseUrl}/rest/v1/profiles?user_id=eq.${userId}`;
+		console.log('Fetching from URL:', url);
+		
+		try {
+			const response = await fetch(url, {
+				headers: {
+					'apikey': supabaseAnonKey,
+					'Content-Type': 'application/json',
+				},
+			});
+			
+			console.log('Response status:', response.status);
+			
+			if (!response.ok) {
+				console.error('Response not ok:', response.statusText);
+				return null;
+			}
+			
+			const data = await response.json();
+			console.log('Fetched data:', data);
+			
+			if (data && data.length > 0) {
+				return data[0];
+			}
+			return null;
+		} catch (error) {
+			console.error('Fetch error:', error);
 			throw error;
 		}
-		return data;
-	}
-
-	// Update profile
+	}	// Update profile
 	static async update(userId: string, updates: UpdateProfileInput): Promise<ProfileDocument> {
 		const now = new Date().toISOString();
 

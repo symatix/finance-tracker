@@ -29,21 +29,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 	// Ensure a profile exists for the authenticated user
 	const ensureProfileExists = async (authUser: User) => {
 		try {
-			console.log('Ensuring profile exists for user:', authUser.email);
+			console.log('Starting ensureProfileExists for user:', authUser.email, 'id:', authUser.id);
 
 			// Check if profile already exists
+			console.log('Calling findByUserId...');
 			const existingProfile = await ProfileOperations.findByUserId(authUser.id);
-			console.log('Existing profile result:', existingProfile);
+			console.log('findByUserId result:', existingProfile);
 
 			if (!existingProfile) {
-				console.log('Creating profile for user:', authUser.email);
+				console.log('Profile not found, calling upsert...');
 				// Create a basic profile with email
 				await ProfileOperations.upsert(authUser.id, {
 					email: authUser.email,
 				});
-				console.log('Created profile for user:', authUser.email);
+				console.log('Upsert completed');
 			} else {
-				console.log('Profile already exists for user:', authUser.email);
+				console.log('Profile already exists');
 			}
 		} catch (error) {
 			console.error('Error ensuring profile exists:', error);
@@ -53,37 +54,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 	};
 
 	useEffect(() => {
-		// Get initial session
-		supabase.auth.getSession().then(async ({ data: { session } }) => {
-			setSession(session);
-			setUser(session?.user ?? null);
-
-			// TEMPORARILY DISABLED: Create profile if user is authenticated and doesn't have one
-			// if (session?.user) {
-			// 	await ensureProfileExists(session.user);
-			// }
-
-			setLoading(false);
-		});
-
-		// Listen for auth changes
+		// Listen for auth changes (including initial session)
 		const {
 			data: { subscription },
 		} = supabase.auth.onAuthStateChange(async (_event: string, session: Session | null) => {
+			console.log('Auth state change - event:', _event, 'session:', session ? 'exists' : 'null');
 			setSession(session);
 			setUser(session?.user ?? null);
 
-			// TEMPORARILY DISABLED: Create profile if user is authenticated and doesn't have one
-			// if (session?.user) {
-			// 	await ensureProfileExists(session.user);
-			// }
+			// Create profile if user is authenticated and doesn't have one
+			if (session?.user) {
+				await ensureProfileExists(session.user);
+			}
 
 			setLoading(false);
 		});
 
 		return () => subscription.unsubscribe();
 	}, []);
-
 	const signIn = async (email: string, password: string) => {
 		const { error } = await supabase.auth.signInWithPassword({
 			email,

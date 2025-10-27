@@ -672,6 +672,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS trigger_add_family_owner ON families;
 CREATE TRIGGER trigger_add_family_owner
     AFTER INSERT ON families
     FOR EACH ROW EXECUTE FUNCTION add_family_owner_to_members();
