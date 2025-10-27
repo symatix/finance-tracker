@@ -23,32 +23,32 @@ export class ProfileOperations {
 	// Get profile by user ID
 	static async findByUserId(userId: string): Promise<ProfileDocument | null> {
 		console.log('ProfileOperations.findByUserId called with userId:', userId);
-		
+
 		// Try using fetch directly to bypass supabase client issues
 		const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 		const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-		
+
 		const url = `${supabaseUrl}/rest/v1/profiles?user_id=eq.${userId}`;
 		console.log('Fetching from URL:', url);
-		
+
 		try {
 			const response = await fetch(url, {
 				headers: {
-					'apikey': supabaseAnonKey,
+					apikey: supabaseAnonKey,
 					'Content-Type': 'application/json',
 				},
 			});
-			
+
 			console.log('Response status:', response.status);
-			
+
 			if (!response.ok) {
 				console.error('Response not ok:', response.statusText);
 				return null;
 			}
-			
+
 			const data = await response.json();
 			console.log('Fetched data:', data);
-			
+
 			if (data && data.length > 0) {
 				return data[0];
 			}
@@ -57,7 +57,7 @@ export class ProfileOperations {
 			console.error('Fetch error:', error);
 			throw error;
 		}
-	}	// Update profile
+	} // Update profile
 	static async update(userId: string, updates: UpdateProfileInput): Promise<ProfileDocument> {
 		const now = new Date().toISOString();
 
@@ -77,25 +77,64 @@ export class ProfileOperations {
 
 	// Create or update profile (upsert)
 	static async upsert(userId: string, profileData: Omit<CreateProfileInput, 'user_id'>): Promise<ProfileDocument> {
-		const now = new Date().toISOString();
+		const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+		const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-		const { data, error } = await supabase
-			.from('profiles')
-			.upsert(
-				{
-					user_id: userId,
-					...profileData,
-					updated_at: now,
+		// First check if profile exists
+		const existing = await this.findByUserId(userId);
+
+		const payload = {
+			...profileData,
+			updated_at: new Date().toISOString(),
+		};
+
+		console.log('Upserting profile:', { userId, payload, exists: !!existing });
+
+		if (existing) {
+			// Update existing profile
+			const url = `${supabaseUrl}/rest/v1/profiles?user_id=eq.${userId}`;
+			const response = await fetch(url, {
+				method: 'PATCH',
+				headers: {
+					apikey: supabaseAnonKey,
+					'Content-Type': 'application/json',
+					Prefer: 'return=representation',
 				},
-				{
-					onConflict: 'user_id',
-				}
-			)
-			.select()
-			.single();
+				body: JSON.stringify(payload),
+			});
 
-		if (error) throw error;
-		return data;
+			if (!response.ok) {
+				const errorText = await response.text();
+				throw new Error(`Update failed: ${response.status} ${errorText}`);
+			}
+
+			const data = await response.json();
+			return data[0] || data;
+		} else {
+			// Insert new profile
+			const url = `${supabaseUrl}/rest/v1/profiles`;
+			const insertPayload = {
+				user_id: userId,
+				...payload,
+			};
+
+			const response = await fetch(url, {
+				method: 'POST',
+				headers: {
+					apikey: supabaseAnonKey,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(insertPayload),
+			});
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				throw new Error(`Insert failed: ${response.status} ${errorText}`);
+			}
+
+			const data = await response.json();
+			return data[0] || data;
+		}
 	}
 
 	// Delete profile
