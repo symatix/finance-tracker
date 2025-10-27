@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
 
 		// Create invitation URL
 		const baseUrl = Deno.env.get('APP_URL') || 'http://localhost:5173';
-		const inviteUrl = `${baseUrl}/accept-invite?token=${invitation.invite_token}`;
+		const inviteUrl = `${baseUrl}?token=${invitation.invite_token}`;
 
 		// Send email using Resend (you'll need to set up Resend)
 		const resendApiKey = Deno.env.get('RESEND_API_KEY');
