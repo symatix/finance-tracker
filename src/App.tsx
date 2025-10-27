@@ -37,6 +37,10 @@ function GitHubPagesRedirect() {
 
 			// Replace the current URL with the clean path
 			navigate(cleanPath, { replace: true });
+		} else if (location.pathname === '/' && searchParams.has('token')) {
+			// Handle direct token URLs: /?token=<token> -> /accept-invite?token=<token>
+			const token = searchParams.get('token');
+			navigate(`/accept-invite?token=${token}`, { replace: true });
 		}
 	}, [location, navigate]);
 
