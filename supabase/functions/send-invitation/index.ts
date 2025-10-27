@@ -61,9 +61,18 @@ Deno.serve(async (req) => {
 			throw new Error('Family not found');
 		}
 
-		// Get inviter's name
+		// Get inviter's email and name for testing (Resend free plan limitation)
 		const { data: inviter, error: inviterError } = await supabaseClient.auth.getUser();
+		const inviterEmail = inviter?.user?.email;
 		const inviterName = inviter?.user?.email?.split('@')[0] || 'Someone';
+
+		if (inviterError || !inviterEmail) {
+			throw new Error('Could not get inviter email');
+		}
+
+		// For testing: send to inviter's email instead of invitee's email
+		// TODO: Remove this when you have a verified domain
+		const recipientEmail = inviterEmail; // Change to 'email' when domain is verified
 
 		// Create invitation URL
 		const baseUrl = Deno.env.get('APP_URL') || 'http://localhost:5173';
@@ -86,11 +95,9 @@ Deno.serve(async (req) => {
 		}
 
 		// Determine sender email based on environment
-		let fromEmail = 'Finance Tracker <invites@yourdomain.com>';
+		const fromEmail = 'Finance Tracker <onboarding@resend.dev>';
 
-		if (baseUrl.includes('github.io')) {
-			fromEmail = 'Finance Tracker <invites@symatix.github.io>';
-		} else if (baseUrl.includes('localhost')) {
+		if (baseUrl.includes('localhost')) {
 			// For localhost development, skip email or use a test service
 			console.log('Development mode: skipping email send for localhost');
 			return new Response(
@@ -113,22 +120,22 @@ Deno.serve(async (req) => {
 			},
 			body: JSON.stringify({
 				from: fromEmail,
-				to: [email],
-				subject: `You're invited to join ${family.name} on Finance Tracker`,
+				to: [recipientEmail],
+				subject: `Test: You're invited to join ${family.name} on Finance Tracker`,
 				html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #2563eb;">Finance Tracker Invitation</h1>
+            <h1 style="color: #2563eb;">Finance Tracker Invitation (Test Mode)</h1>
             <p>Hi there!</p>
-            <p><strong>${inviterName}</strong> has invited you to join their financial account <strong>"${family.name}"</strong> on Finance Tracker.</p>
-            <p>As a <strong>${role}</strong>, you'll be able to collaborate on financial planning and tracking.</p>
+            <p><strong>${inviterName}</strong> has invited <strong>${email}</strong> to join their financial account <strong>"${family.name}"</strong> on Finance Tracker.</p>
+            <p>As a <strong>${role}</strong>, they'll be able to collaborate on financial planning and tracking.</p>
             <div style="text-align: center; margin: 30px 0;">
               <a href="${inviteUrl}"
                  style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
                 Accept Invitation
               </a>
             </div>
+            <p style="color: #ef4444; font-weight: bold;">⚠️ TEST MODE: This email was sent to you from resend.dev, because the domain is not verified yet.</p>
             <p>This invitation will expire in 7 days.</p>
-            <p>If you didn't expect this invitation, you can safely ignore this email.</p>
             <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
             <p style="color: #6b7280; font-size: 14px;">
               Finance Tracker - Collaborative Financial Management
