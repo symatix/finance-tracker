@@ -1,4 +1,4 @@
-import { FormControl, InputLabel, Select, MenuItem, Box, Typography, Chip } from '@mui/material';
+import { FormControl, InputLabel, Select, MenuItem, Box, Typography } from '@mui/material';
 import { FamilyRestroom } from '@mui/icons-material';
 import { useEffect } from 'react';
 import type { FamilyDocument } from '../../../db';
@@ -10,8 +10,6 @@ interface FamilySelectorProps {
 }
 
 export function FamilySelector({ families, currentFamilyId, onFamilyChange }: FamilySelectorProps) {
-	const currentFamily = families.find((f) => f.id === currentFamilyId);
-
 	// Auto-select first family if none is selected and families exist
 	useEffect(() => {
 		if (!currentFamilyId && families.length > 0) {

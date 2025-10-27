@@ -32,6 +32,7 @@ export interface Transaction {
 	subcategory?: string | null;
 	note?: string | null;
 	date: string;
+	createdBy?: string | null;
 }
 
 export interface Category {
@@ -140,6 +141,7 @@ const documentToTransaction = (doc: TransactionDocument): Transaction => ({
 	subcategory: doc.subcategory,
 	note: doc.note,
 	date: doc.date,
+	createdBy: doc.created_by,
 });
 
 const documentToCategory = (doc: CategoryDocument): Category => ({
@@ -170,11 +172,36 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 		try {
 			set({ isLoading: true, error: null });
 
-			// Load initial data
-			await get().loadCategories(userId);
-			await get().loadTransactions(userId);
-			await get().loadRecurringTransactions(userId);
-			await get().loadPlannedExpenses(userId);
+			// Load initial data - continue even if some fail
+			try {
+				await get().loadCategories(userId);
+			} catch (catError) {
+				console.warn('Failed to load categories:', catError);
+			}
+
+			try {
+				await get().loadTransactions(userId);
+			} catch (transError) {
+				console.warn('Failed to load transactions:', transError);
+			}
+
+			try {
+				await get().loadRecurringTransactions(userId);
+			} catch (recError) {
+				console.warn('Failed to load recurring transactions:', recError);
+			}
+
+			try {
+				await get().loadPlannedExpenses(userId);
+			} catch (planError) {
+				console.warn('Failed to load planned expenses:', planError);
+			}
+
+			try {
+				await get().loadFamilies(userId); // Load families and auto-select current family
+			} catch (famError) {
+				console.warn('Failed to load families:', famError);
+			}
 
 			set({ isInitialized: true, isLoading: false });
 		} catch (error) {
@@ -723,10 +750,20 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 
 	loadFamilies: async (userId: string) => {
 		try {
-			set({ isLoading: true, error: null });
 			const families = await FamilyOperations.findByUserId(userId);
-			set({ families, isLoading: false });
+
+			// Auto-select first family if no current family is set and families exist
+			const currentFamilyId = get().currentFamilyId;
+			const shouldAutoSelect = !currentFamilyId && families.length > 0;
+			const newCurrentFamilyId = shouldAutoSelect ? families[0].id : currentFamilyId;
+
+			set({
+				families,
+				currentFamilyId: newCurrentFamilyId,
+				isLoading: false,
+			});
 		} catch (error) {
+			console.error('Failed to load families:', error);
 			set({ error: error instanceof Error ? error.message : 'Failed to load families', isLoading: false });
 		}
 	},

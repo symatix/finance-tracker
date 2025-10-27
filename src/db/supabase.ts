@@ -200,6 +200,63 @@ export interface Database {
 					updated_at?: string;
 				};
 			};
+			profiles: {
+				Row: {
+					id: string;
+					user_id: string;
+					first_name: string | null;
+					last_name: string | null;
+					display_name: string | null;
+					address_line_1: string | null;
+					address_line_2: string | null;
+					city: string | null;
+					state_province: string | null;
+					postal_code: string | null;
+					country: string | null;
+					phone: string | null;
+					date_of_birth: string | null;
+					avatar_url: string | null;
+					bio: string | null;
+					created_at: string;
+					updated_at: string;
+				};
+				Insert: {
+					id?: string;
+					user_id: string;
+					first_name?: string | null;
+					last_name?: string | null;
+					display_name?: string | null;
+					address_line_1?: string | null;
+					address_line_2?: string | null;
+					city?: string | null;
+					state_province?: string | null;
+					postal_code?: string | null;
+					country?: string | null;
+					phone?: string | null;
+					date_of_birth?: string | null;
+					avatar_url?: string | null;
+					bio?: string | null;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Update: {
+					id?: string;
+					first_name?: string | null;
+					last_name?: string | null;
+					display_name?: string | null;
+					address_line_1?: string | null;
+					address_line_2?: string | null;
+					city?: string | null;
+					state_province?: string | null;
+					postal_code?: string | null;
+					country?: string | null;
+					phone?: string | null;
+					date_of_birth?: string | null;
+					avatar_url?: string | null;
+					bio?: string | null;
+					updated_at?: string;
+				};
+			};
 			families: {
 				Row: {
 					id: string;

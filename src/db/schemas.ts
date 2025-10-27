@@ -97,6 +97,71 @@ export type PlannedExpenseDocument = PlannedExpenseRow;
 export type CreatePlannedExpenseInput = PlannedExpenseInsert;
 export type UpdatePlannedExpenseInput = PlannedExpenseUpdate;
 
+// Profile types (defined manually until Supabase types are regenerated)
+export interface ProfileRow {
+	id: string;
+	user_id: string;
+	email: string;
+	first_name: string | null;
+	last_name: string | null;
+	display_name: string | null;
+	address_line_1: string | null;
+	address_line_2: string | null;
+	city: string | null;
+	state_province: string | null;
+	postal_code: string | null;
+	country: string | null;
+	phone: string | null;
+	date_of_birth: string | null;
+	avatar_url: string | null;
+	bio: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface ProfileInsert {
+	id?: string;
+	user_id: string;
+	email?: string | null;
+	first_name?: string | null;
+	last_name?: string | null;
+	display_name?: string | null;
+	address_line_1?: string | null;
+	address_line_2?: string | null;
+	city?: string | null;
+	state_province?: string | null;
+	postal_code?: string | null;
+	country?: string | null;
+	phone?: string | null;
+	date_of_birth?: string | null;
+	avatar_url?: string | null;
+	bio?: string | null;
+	created_at?: string;
+	updated_at?: string;
+}
+
+export interface ProfileUpdate {
+	id?: string;
+	first_name?: string | null;
+	last_name?: string | null;
+	display_name?: string | null;
+	address_line_1?: string | null;
+	address_line_2?: string | null;
+	city?: string | null;
+	state_province?: string | null;
+	postal_code?: string | null;
+	country?: string | null;
+	phone?: string | null;
+	date_of_birth?: string | null;
+	avatar_url?: string | null;
+	bio?: string | null;
+	updated_at?: string;
+}
+
+export type ProfileDocument = ProfileRow;
+export type CreateProfileInput = ProfileInsert;
+export type UpdateProfileInput = ProfileUpdate;
+
 // Family and Collaboration types (defined manually until Supabase types are regenerated)
 export interface FamilyRow {
 	id: string;

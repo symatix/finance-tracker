@@ -15,6 +15,7 @@ const ShoppingPage = lazy(() => import('./pages/shopping').then((module) => ({ d
 const RecurringPage = lazy(() => import('./pages/recurring').then((module) => ({ default: module.default })));
 const PlannedPage = lazy(() => import('./pages/planned').then((module) => ({ default: module.default })));
 const FamilyPage = lazy(() => import('./pages/family').then((module) => ({ default: module.default })));
+const ProfilePage = lazy(() => import('./pages/Profile'));
 const HelpPage = lazy(() => import('./pages/help').then((module) => ({ default: module.default })));
 
 function AppContent() {
@@ -67,6 +68,7 @@ function AppContent() {
 				<Route path='/recurring' element={<RecurringPage />} />
 				<Route path='/planned' element={<PlannedPage />} />
 				<Route path='/family' element={<FamilyPage />} />
+				<Route path='/profile' element={<ProfilePage />} />
 				<Route path='/help' element={<HelpPage />} />
 				{/* Fallback */}
 				<Route path='*' element={<Navigate to='/dashboard' replace />} />

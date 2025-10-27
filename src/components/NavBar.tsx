@@ -240,6 +240,16 @@ export const NavBar = () => {
 								<MenuItem
 									onClick={() => {
 										handleUserMenuClose();
+										navigate('/profile');
+									}}
+									sx={{ fontSize: '0.875rem' }}
+								>
+									<Person sx={{ mr: 1, fontSize: '1rem' }} />
+									Edit Profile
+								</MenuItem>
+								<MenuItem
+									onClick={() => {
+										handleUserMenuClose();
 										navigate('/help');
 									}}
 									sx={{ fontSize: '0.875rem' }}

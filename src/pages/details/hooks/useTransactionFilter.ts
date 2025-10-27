@@ -8,6 +8,7 @@ export interface FilterState {
 	dateTo: string;
 	minAmount: string;
 	maxAmount: string;
+	createdBy: string;
 }
 
 export interface SortState {
@@ -23,6 +24,7 @@ export function useTransactionFilter(transactions: Transaction[], getCategoryNam
 		dateTo: '',
 		minAmount: '',
 		maxAmount: '',
+		createdBy: '',
 	});
 
 	const [sort, setSort] = useState<SortState>({
@@ -49,6 +51,7 @@ export function useTransactionFilter(transactions: Transaction[], getCategoryNam
 			dateTo: '',
 			minAmount: '',
 			maxAmount: '',
+			createdBy: '',
 		});
 	};
 
@@ -60,6 +63,7 @@ export function useTransactionFilter(transactions: Transaction[], getCategoryNam
 			.filter((t) => (filters.dateTo ? new Date(t.date) <= new Date(filters.dateTo) : true))
 			.filter((t) => (filters.minAmount ? t.amount >= Number(filters.minAmount) : true))
 			.filter((t) => (filters.maxAmount ? t.amount <= Number(filters.maxAmount) : true))
+			.filter((t) => (filters.createdBy ? t.createdBy === filters.createdBy : true))
 			.sort((a, b) => {
 				let aField: string | number, bField: string | number;
 				switch (sort.field) {

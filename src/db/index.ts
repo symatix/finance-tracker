@@ -6,6 +6,7 @@ export type {
 	ListItemDocument,
 	RecurringTransactionDocument,
 	PlannedExpenseDocument,
+	ProfileDocument,
 	FamilyDocument,
 	FamilyMemberDocument,
 	CreateCategoryInput,
@@ -20,6 +21,8 @@ export type {
 	UpdateRecurringTransactionInput,
 	CreatePlannedExpenseInput,
 	UpdatePlannedExpenseInput,
+	CreateProfileInput,
+	UpdateProfileInput,
 	CreateFamilyInput,
 	UpdateFamilyInput,
 	CreateFamilyMemberInput,
@@ -36,6 +39,7 @@ export { ShoppingListOperations } from './shoppingListOperations';
 export { ListItemOperations } from './listItemOperations';
 export { RecurringTransactionOperations } from './recurringTransactionOperations';
 export { PlannedExpenseOperations } from './plannedExpenseOperations';
+export { ProfileOperations } from './profileOperations';
 export { FamilyOperations } from './familyOperations';
 export { FamilyMemberOperations } from './familyOperations';
 export { InvitationOperations } from './invitationOperations';

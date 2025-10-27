@@ -23,6 +23,8 @@ import { type Transaction } from '../../../store';
 import { type SortState } from '../hooks/useTransactionFilter';
 import { useTransactionTable } from '../hooks/useTransactionTable';
 import { TransactionModal } from './TransactionModel';
+import { ProfileOperations } from '../../../db';
+import { useCallback, useState, useEffect } from 'react';
 
 interface TransactionTableProps {
 	filteredAndSortedTransactions: Transaction[];
@@ -31,6 +33,7 @@ interface TransactionTableProps {
 	onSort: (field: SortState['field']) => void;
 	onUpdateTransaction: (id: string, data: { amount: number; note: string; categoryId: string }) => void;
 	onDeleteTransaction: (id: string) => void;
+	currentFamilyId: string | null;
 }
 
 const TRANSACTION_TYPE_COLORS = {
@@ -46,7 +49,46 @@ export function TransactionTable({
 	onSort,
 	onUpdateTransaction,
 	onDeleteTransaction,
+	currentFamilyId,
 }: TransactionTableProps) {
+	const [userProfiles, setUserProfiles] = useState<Map<string, string>>(new Map());
+
+	const fetchUserProfiles = useCallback(async () => {
+		try {
+			// Get unique user IDs from transactions
+			const userIds = new Set<string>();
+			filteredAndSortedTransactions.forEach((t) => {
+				if (t.createdBy) {
+					userIds.add(t.createdBy);
+				}
+			});
+
+			if (userIds.size === 0) {
+				setUserProfiles(new Map());
+				return;
+			}
+
+			// Fetch profiles for these users
+			const displayNames = await ProfileOperations.getDisplayNames(Array.from(userIds));
+			const profiles = new Map<string, string>();
+			for (const userId of userIds) {
+				profiles.set(userId, displayNames[userId] || 'Unknown User');
+			}
+
+			setUserProfiles(profiles);
+		} catch (error) {
+			console.error('Error fetching user profiles:', error);
+			setUserProfiles(new Map());
+		}
+	}, [filteredAndSortedTransactions]);
+
+	// Fetch user profiles when in family mode
+	useEffect(() => {
+		if (currentFamilyId) {
+			fetchUserProfiles();
+		}
+	}, [currentFamilyId, fetchUserProfiles]);
+
 	// Use the table hook internally
 	const {
 		page,
@@ -107,6 +149,7 @@ export function TransactionTable({
 								</TableSortLabel>
 							</TableCell>
 							<TableCell>Note</TableCell>
+							{currentFamilyId && <TableCell>Created By</TableCell>}
 							<TableCell align='right'>Actions</TableCell>
 						</TableRow>
 					</TableHead>
@@ -126,6 +169,9 @@ export function TransactionTable({
 									{formatCurrency(t.amount)}
 								</TableCell>
 								<TableCell>{t.note}</TableCell>
+								{currentFamilyId && (
+									<TableCell>{userProfiles.get(t.createdBy || '') || 'Unknown User'}</TableCell>
+								)}
 								<TableCell align='right'>
 									<Stack direction='row' spacing={1} justifyContent='flex-end'>
 										<IconButton color='primary' onClick={() => editTransaction(t)}>

@@ -119,6 +119,28 @@ CREATE TABLE IF NOT EXISTS planned_expenses (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create profiles table for user profile information
+CREATE TABLE IF NOT EXISTS profiles (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
+    email TEXT,
+    first_name TEXT,
+    last_name TEXT,
+    display_name TEXT,
+    address_line_1 TEXT,
+    address_line_2 TEXT,
+    city TEXT,
+    state_province TEXT,
+    postal_code TEXT,
+    country TEXT,
+    phone TEXT,
+    date_of_birth DATE,
+    avatar_url TEXT,
+    bio TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ===========================================
 -- 2. COLLABORATION FEATURES
 -- ===========================================
@@ -185,6 +207,9 @@ CREATE INDEX IF NOT EXISTS idx_planned_expenses_due_date ON planned_expenses(due
 CREATE INDEX IF NOT EXISTS idx_planned_expenses_status ON planned_expenses(status);
 CREATE INDEX IF NOT EXISTS idx_planned_expenses_priority ON planned_expenses(priority);
 
+-- Profiles indexes
+CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON profiles(user_id);
+
 -- Collaboration indexes
 CREATE INDEX IF NOT EXISTS idx_families_owner_id ON families(owner_id);
 CREATE INDEX IF NOT EXISTS idx_family_members_family_id ON family_members(family_id);
@@ -233,6 +258,7 @@ ALTER TABLE shopping_lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE list_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recurring_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE planned_expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE families ENABLE ROW LEVEL SECURITY;
 ALTER TABLE family_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE invitations ENABLE ROW LEVEL SECURITY;
@@ -357,6 +383,17 @@ CREATE POLICY "Users can manage their planned expenses" ON planned_expenses
             user_id = auth.uid() OR
             can_access_shared_resource(shared_account_id, 'member')
         )
+    );
+
+-- Profiles policies
+CREATE POLICY "Users can view their own profile" ON profiles
+    FOR SELECT USING (
+        auth.role() = 'authenticated' AND user_id = auth.uid()
+    );
+
+CREATE POLICY "Users can manage their own profile" ON profiles
+    FOR ALL USING (
+        auth.role() = 'authenticated' AND user_id = auth.uid()
     );
 
 -- Family policies (no circular dependencies)
@@ -489,6 +526,7 @@ CREATE OR REPLACE FUNCTION accept_invitation(
 RETURNS BOOLEAN AS $$
 DECLARE
     v_invitation RECORD;
+    v_user_email TEXT;
 BEGIN
     -- Find the invitation
     SELECT * INTO v_invitation
@@ -501,12 +539,13 @@ BEGIN
         RAISE EXCEPTION 'Invalid or expired invitation';
     END IF;
 
+    -- Get user email
+    SELECT email INTO v_user_email
+    FROM auth.users
+    WHERE id = p_user_id;
+
     -- Check if user email matches invitation
-    IF NOT EXISTS (
-        SELECT 1 FROM auth.users
-        WHERE id = p_user_id
-        AND email = v_invitation.email
-    ) THEN
+    IF v_user_email != v_invitation.email THEN
         RAISE EXCEPTION 'Invitation email does not match your account';
     END IF;
 
@@ -518,6 +557,11 @@ BEGIN
     ) THEN
         RAISE EXCEPTION 'You are already a member of this family';
     END IF;
+
+    -- Ensure user has a profile
+    INSERT INTO profiles (user_id, email)
+    VALUES (p_user_id, v_user_email)
+    ON CONFLICT (user_id) DO NOTHING;
 
     -- Add user to family
     INSERT INTO family_members (family_id, user_id, role)
