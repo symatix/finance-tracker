@@ -1,5 +1,5 @@
 import { useEffect, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { NavBar } from './components/NavBar';
 import { AuthProvider } from './components/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -17,6 +17,31 @@ const PlannedPage = lazy(() => import('./pages/planned').then((module) => ({ def
 const FamilyPage = lazy(() => import('./pages/family').then((module) => ({ default: module.default })));
 const ProfilePage = lazy(() => import('./pages/Profile'));
 const HelpPage = lazy(() => import('./pages/help').then((module) => ({ default: module.default })));
+
+// Handle GitHub Pages SPA redirects
+function GitHubPagesRedirect() {
+	const navigate = useNavigate();
+	const location = useLocation();
+
+	useEffect(() => {
+		// Handle redirected URLs from 404.html
+		// GitHub Pages redirects /finance-tracker/accept-invite?token=... to /finance-tracker/?/accept-invite&token=...
+		const searchParams = new URLSearchParams(location.search);
+		const redirectedPath = searchParams.get('/');
+
+		if (redirectedPath) {
+			// Remove the redirect parameter and reconstruct the path
+			searchParams.delete('/');
+			const queryString = searchParams.toString();
+			const cleanPath = `/${redirectedPath}${queryString ? `?${queryString}` : ''}`;
+
+			// Replace the current URL with the clean path
+			navigate(cleanPath, { replace: true });
+		}
+	}, [location, navigate]);
+
+	return null;
+}
 
 function AppContent() {
 	const { user, loading: authLoading } = useAuth();
@@ -81,10 +106,10 @@ export default function App() {
 	return (
 		<AuthProvider>
 			<Router basename='/finance-tracker/'>
+				<GitHubPagesRedirect />
 				<Routes>
-					{/* Public login route */}
+					{/* Public routes */}
 					<Route path='/login' element={<Login />} />
-					{/* Public invitation acceptance route */}
 					<Route path='/accept-invite' element={<AcceptInvitation />} />
 
 					{/* Protected routes */}
