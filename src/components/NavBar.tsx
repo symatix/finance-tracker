@@ -37,6 +37,7 @@ export const NavBar = () => {
 		{ label: 'Planned', path: '/planned' },
 		{ label: 'Shopping', path: '/shopping' },
 		{ label: 'Categories', path: '/categories' },
+		{ label: 'Family', path: '/family' },
 	];
 
 	const handleDrawerToggle = () => {
@@ -235,6 +236,16 @@ export const NavBar = () => {
 								<MenuItem disabled sx={{ opacity: 1, fontSize: '0.875rem', color: 'text.secondary' }}>
 									<Person sx={{ mr: 1, fontSize: '1rem' }} />
 									{user?.email}
+								</MenuItem>
+								<MenuItem
+									onClick={() => {
+										handleUserMenuClose();
+										navigate('/profile');
+									}}
+									sx={{ fontSize: '0.875rem' }}
+								>
+									<Person sx={{ mr: 1, fontSize: '1rem' }} />
+									Edit Profile
 								</MenuItem>
 								<MenuItem
 									onClick={() => {

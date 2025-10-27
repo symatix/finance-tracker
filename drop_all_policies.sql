@@ -1,0 +1,23 @@
+-- Drop all existing policies to allow re-running the setup script
+DROP POLICY IF EXISTS "Categories are viewable by authenticated users" ON categories;
+DROP POLICY IF EXISTS "Categories are manageable by creators and family members" ON categories;
+DROP POLICY IF EXISTS "Users can view their transactions" ON transactions;
+DROP POLICY IF EXISTS "Users can manage their transactions" ON transactions;
+DROP POLICY IF EXISTS "Users can view accessible shopping lists" ON shopping_lists;
+DROP POLICY IF EXISTS "Users can manage accessible shopping lists" ON shopping_lists;
+DROP POLICY IF EXISTS "Users can manage list items in accessible lists" ON list_items;
+DROP POLICY IF EXISTS "Users can view their recurring transactions" ON recurring_transactions;
+DROP POLICY IF EXISTS "Users can manage their recurring transactions" ON recurring_transactions;
+DROP POLICY IF EXISTS "Users can view their planned expenses" ON planned_expenses;
+DROP POLICY IF EXISTS "Users can manage their planned expenses" ON planned_expenses;
+DROP POLICY IF EXISTS "Users can view their own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can manage their own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can insert their own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can update their own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can delete their own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can view families they belong to" ON families;
+DROP POLICY IF EXISTS "Family owners can manage their families" ON families;
+DROP POLICY IF EXISTS "Users can view family memberships" ON family_members;
+DROP POLICY IF EXISTS "Family owners can manage members" ON family_members;
+DROP POLICY IF EXISTS "Users can view invitations they sent" ON invitations;
+DROP POLICY IF EXISTS "Family owners can manage invitations for their families" ON invitations;

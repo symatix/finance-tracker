@@ -4,14 +4,20 @@ import {
 	TransactionOperations,
 	RecurringTransactionOperations,
 	PlannedExpenseOperations,
+	FamilyOperations,
+	FamilyMemberOperations,
 	type CategoryDocument,
 	type TransactionDocument,
 	type RecurringTransactionDocument,
 	type PlannedExpenseDocument,
+	type FamilyDocument,
+	type FamilyMemberDocument,
 	type CreateCategoryInput,
 	type CreateTransactionInput,
 	type CreateRecurringTransactionInput,
 	type CreatePlannedExpenseInput,
+	type CreateFamilyInput,
+	type CreateFamilyMemberInput,
 } from '../db';
 
 // ---------- Types ----------
@@ -26,6 +32,7 @@ export interface Transaction {
 	subcategory?: string | null;
 	note?: string | null;
 	date: string;
+	createdBy?: string | null;
 }
 
 export interface Category {
@@ -45,6 +52,8 @@ export interface BudgetState {
 	categories: Category[];
 	recurringTransactions: Array<RecurringTransactionDocument & { categoryName?: string; categoryType?: string }>;
 	plannedExpenses: Array<PlannedExpenseDocument & { categoryName?: string; categoryType?: string }>;
+	families: Array<FamilyDocument & { members?: FamilyMemberDocument[] }>;
+	currentFamilyId: string | null;
 	settings: Settings;
 	isLoading: boolean;
 	error: string | null;
@@ -85,7 +94,17 @@ export interface BudgetStore extends BudgetState {
 		actualDate?: string
 	) => Promise<void>;
 
-	// Category methods (now async)
+	// Family methods
+	createFamily: (family: CreateFamilyInput) => Promise<void>;
+	loadFamilies: (userId: string) => Promise<void>;
+	updateFamily: (id: string, updates: Partial<FamilyDocument>) => Promise<void>;
+	deleteFamily: (id: string) => Promise<void>;
+	setCurrentFamily: (familyId: string | null) => void;
+
+	// Family member methods
+	addFamilyMember: (member: CreateFamilyMemberInput) => Promise<void>;
+	updateFamilyMember: (id: string, updates: Partial<FamilyMemberDocument>) => Promise<void>;
+	removeFamilyMember: (id: string) => Promise<void>;
 	addCategory: (userId: string, category: Omit<Category, 'id'>) => Promise<void>;
 	updateCategory: (userId: string, id: string, updates: Partial<Category>) => Promise<void>;
 	deleteCategory: (userId: string, id: string) => Promise<void>;
@@ -108,7 +127,7 @@ export interface BudgetStore extends BudgetState {
 	toggleTheme: () => void;
 
 	// Utility
-	resetAll: (userId: string) => Promise<void>;
+	resetAll: () => Promise<void>;
 	clearError: () => void;
 }
 
@@ -122,13 +141,14 @@ const documentToTransaction = (doc: TransactionDocument): Transaction => ({
 	subcategory: doc.subcategory,
 	note: doc.note,
 	date: doc.date,
+	createdBy: doc.created_by,
 });
 
 const documentToCategory = (doc: CategoryDocument): Category => ({
 	id: doc.id,
 	name: doc.name,
 	type: doc.type,
-	subcategories: doc.subcategories,
+	subcategories: doc.subcategories || [],
 });
 
 // ---------- Store ----------
@@ -137,6 +157,8 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 	categories: [],
 	recurringTransactions: [],
 	plannedExpenses: [],
+	families: [],
+	currentFamilyId: null,
 	settings: {
 		monthlyBudget: 0,
 		theme: 'light',
@@ -150,11 +172,36 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 		try {
 			set({ isLoading: true, error: null });
 
-			// Load initial data
-			await get().loadCategories(userId);
-			await get().loadTransactions(userId);
-			await get().loadRecurringTransactions(userId);
-			await get().loadPlannedExpenses(userId);
+			// Load initial data - continue even if some fail
+			try {
+				await get().loadCategories(userId);
+			} catch (catError) {
+				console.warn('Failed to load categories:', catError);
+			}
+
+			try {
+				await get().loadTransactions(userId);
+			} catch (transError) {
+				console.warn('Failed to load transactions:', transError);
+			}
+
+			try {
+				await get().loadRecurringTransactions(userId);
+			} catch (recError) {
+				console.warn('Failed to load recurring transactions:', recError);
+			}
+
+			try {
+				await get().loadPlannedExpenses(userId);
+			} catch (planError) {
+				console.warn('Failed to load planned expenses:', planError);
+			}
+
+			try {
+				await get().loadFamilies(userId); // Load families and auto-select current family
+			} catch (famError) {
+				console.warn('Failed to load families:', famError);
+			}
 
 			set({ isInitialized: true, isLoading: false });
 		} catch (error) {
@@ -171,6 +218,7 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 		try {
 			set({ isLoading: true, error: null });
 
+			const currentFamilyId = get().currentFamilyId;
 			const transactionData: CreateTransactionInput = {
 				user_id: userId,
 				amount: transaction.amount,
@@ -179,6 +227,9 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 				subcategory: transaction.subcategory || null,
 				note: transaction.note || '',
 				date: transaction.date,
+				created_by: userId,
+				shared_account_id: currentFamilyId,
+				is_shared: currentFamilyId !== null,
 			};
 
 			const createdDoc = await TransactionOperations.create(transactionData);
@@ -264,9 +315,13 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 		try {
 			set({ isLoading: true, error: null });
 
+			const currentFamilyId = get().currentFamilyId;
 			const recurringData: CreateRecurringTransactionInput = {
 				...recurring,
 				user_id: userId,
+				created_by: userId,
+				shared_account_id: currentFamilyId,
+				is_shared: currentFamilyId !== null,
 			};
 
 			const createdDoc = await RecurringTransactionOperations.create(recurringData);
@@ -368,9 +423,13 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 		try {
 			set({ isLoading: true, error: null });
 
+			const currentFamilyId = get().currentFamilyId;
 			const plannedExpenseData: CreatePlannedExpenseInput = {
 				...plannedExpense,
 				user_id: userId,
+				created_by: userId,
+				shared_account_id: currentFamilyId,
+				is_shared: currentFamilyId !== null,
 			};
 
 			const createdDoc = await PlannedExpenseOperations.create(plannedExpenseData);
@@ -474,11 +533,14 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 		try {
 			set({ isLoading: true, error: null });
 
+			const currentFamilyId = get().currentFamilyId;
 			const categoryData: CreateCategoryInput = {
-				user_id: userId,
 				name: category.name,
 				type: category.type,
 				subcategories: category.subcategories || [],
+				created_by: userId,
+				shared_account_id: currentFamilyId,
+				is_shared: currentFamilyId !== null,
 			};
 
 			const createdDoc = await CategoryOperations.create(categoryData);
@@ -648,7 +710,7 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 		})),
 
 	// ----- Utility -----
-	resetAll: async (_userId: string) => {
+	resetAll: async () => {
 		try {
 			set({ isLoading: true, error: null });
 			// Note: In a real app, you might want to clear the database
@@ -671,4 +733,133 @@ export const useBudgetStore = create<BudgetStore>((set, get) => ({
 	},
 
 	clearError: () => set({ error: null }),
+
+	// Family methods
+	createFamily: async (family: CreateFamilyInput) => {
+		try {
+			set({ isLoading: true, error: null });
+			const newFamily = await FamilyOperations.create(family);
+			set((state) => ({
+				families: [...state.families, newFamily],
+				isLoading: false,
+			}));
+		} catch (error) {
+			set({ error: error instanceof Error ? error.message : 'Failed to create family', isLoading: false });
+		}
+	},
+
+	loadFamilies: async (userId: string) => {
+		try {
+			const families = await FamilyOperations.findByUserId(userId);
+
+			// Auto-select first family if no current family is set and families exist
+			const currentFamilyId = get().currentFamilyId;
+			const shouldAutoSelect = !currentFamilyId && families.length > 0;
+			const newCurrentFamilyId = shouldAutoSelect ? families[0].id : currentFamilyId;
+
+			set({
+				families,
+				currentFamilyId: newCurrentFamilyId,
+				isLoading: false,
+			});
+		} catch (error) {
+			console.error('Failed to load families:', error);
+			set({ error: error instanceof Error ? error.message : 'Failed to load families', isLoading: false });
+		}
+	},
+
+	updateFamily: async (id: string, updates: Partial<FamilyDocument>) => {
+		try {
+			set({ isLoading: true, error: null });
+			const updatedFamily = await FamilyOperations.update(id, updates);
+			if (updatedFamily) {
+				set((state) => ({
+					families: state.families.map((family) => (family.id === id ? updatedFamily : family)),
+					isLoading: false,
+				}));
+			} else {
+				set({ error: 'Family not found', isLoading: false });
+			}
+		} catch (error) {
+			set({ error: error instanceof Error ? error.message : 'Failed to update family', isLoading: false });
+		}
+	},
+
+	deleteFamily: async (id: string) => {
+		try {
+			set({ isLoading: true, error: null });
+			await FamilyOperations.delete(id);
+			set((state) => ({
+				families: state.families.filter((family) => family.id !== id),
+				currentFamilyId: state.currentFamilyId === id ? null : state.currentFamilyId,
+				isLoading: false,
+			}));
+		} catch (error) {
+			set({ error: error instanceof Error ? error.message : 'Failed to delete family', isLoading: false });
+		}
+	},
+
+	setCurrentFamily: (familyId: string | null) => {
+		set({ currentFamilyId: familyId });
+	},
+
+	// Family member methods
+	addFamilyMember: async (member: CreateFamilyMemberInput) => {
+		try {
+			set({ isLoading: true, error: null });
+			const newMember = await FamilyMemberOperations.create(member);
+			set((state) => ({
+				families: state.families.map((family) =>
+					family.id === member.family_id
+						? { ...family, members: [...(family.members || []), newMember] }
+						: family
+				),
+				isLoading: false,
+			}));
+		} catch (error) {
+			set({ error: error instanceof Error ? error.message : 'Failed to add family member', isLoading: false });
+		}
+	},
+
+	updateFamilyMember: async (id: string, updates: Partial<FamilyMemberDocument>) => {
+		try {
+			set({ isLoading: true, error: null });
+			const updatedMember = await FamilyMemberOperations.update(id, updates);
+			if (updatedMember) {
+				set((state) => ({
+					families: state.families.map((family) =>
+						family.members?.some((member) => member.id === id)
+							? {
+									...family,
+									members: family.members?.map((member) =>
+										member.id === id ? updatedMember : member
+									),
+							  }
+							: family
+					),
+					isLoading: false,
+				}));
+			} else {
+				set({ error: 'Family member not found', isLoading: false });
+			}
+		} catch (error) {
+			set({ error: error instanceof Error ? error.message : 'Failed to update family member', isLoading: false });
+		}
+	},
+
+	removeFamilyMember: async (id: string) => {
+		try {
+			set({ isLoading: true, error: null });
+			await FamilyMemberOperations.delete(id);
+			set((state) => ({
+				families: state.families.map((family) => ({
+					...family,
+					members: family.members?.filter((member) => member.id !== id),
+				})),
+				isLoading: false,
+			}));
+		} catch (error) {
+			set({ error: error instanceof Error ? error.message : 'Failed to remove family member', isLoading: false });
+		}
+	},
 }));

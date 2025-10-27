@@ -1,6 +1,259 @@
-# Budget Tracker App
+# Finance Tracker
 
-A modern React TypeScript application for tracking personal finances with categories, transactions, and detailed analytics.
+A comprehensive React TypeScript application for collaborative financial management with multi-user accounts, email invitations, and detailed analytics.
+
+## ✨ Features
+
+### Core Financial Tracking
+
+-   📊 **Interactive Dashboard**: Real-time overview of income, expenses, and savings with beautiful charts
+-   💰 **Transaction Management**: Add, edit, and delete transactions with categorized organization
+-   📁 **Smart Categories**: Organize transactions into income, expense, and savings categories with subcategories
+-   📈 **Advanced Analytics**: Monthly/yearly filtering with financial summaries and trends
+-   🔄 **Recurring Transactions**: Automated processing of recurring income and expenses
+-   🛒 **Shopping Lists**: Create and manage shopping lists linked to expense categories
+-   📅 **Planned Expenses**: Track upcoming expenses with priority levels and due dates
+
+### 👥 Collaboration & Multi-User Features
+
+-   🏠 **Shared Accounts**: Create family/household accounts for collaborative financial management
+-   📧 **Email Invitations**: Send secure email invitations with role-based access control
+-   👤 **User Roles**: Owner, Admin, Member, and Viewer roles with appropriate permissions
+-   🔒 **Secure Sharing**: Row-level security ensures users only see authorized data
+-   🤝 **Real-time Collaboration**: Live updates when team members make changes
+
+### 🎨 User Experience
+
+-   🎯 **Modern UI**: Built with Material-UI components and responsive design
+-   ⚡ **Real-time Updates**: Live data synchronization with Supabase
+-   📱 **Mobile-Friendly**: Responsive design that works on all devices
+-   🎨 **Dark/Light Themes**: Automatic theme switching based on user preferences
+-   🚀 **Fast Performance**: Optimized with Vite build system and efficient state management
+
+## 🛠️ Tech Stack
+
+-   **Frontend**: React 18 + TypeScript + Vite
+-   **State Management**: Zustand with async operations
+-   **UI Library**: Material-UI (MUI) with custom theming
+-   **Database**: Supabase (PostgreSQL with real-time subscriptions)
+-   **Authentication**: Supabase Auth with email/password and social logins
+-   **Email Service**: Resend API for transactional emails
+-   **Edge Functions**: Supabase Edge Runtime for serverless functions
+-   **Build Tool**: Vite with TypeScript and ESLint
+-   **Deployment**: GitHub Pages (or any static hosting)
+
+## 📁 Project Structure
+
+```
+src/
+├── components/          # Reusable UI components
+├── pages/              # Main page components
+│   ├── dashboard/      # Dashboard with charts and summaries
+│   ├── transactions/   # Transaction management
+│   ├── categories/     # Category organization
+│   ├── family/         # Account management and collaboration
+│   ├── planned/        # Planned expenses tracking
+│   ├── recurring/      # Recurring transactions
+│   ├── shopping/       # Shopping list management
+│   └── help/           # Help and documentation
+├── store/              # Zustand state management
+├── db/                 # Database operations and schemas
+├── hooks/              # Custom React hooks
+├── contexts/           # React contexts (Auth, etc.)
+├── utils/              # Utility functions
+├── assets/             # Static assets and icons
+└── types/              # TypeScript type definitions
+supabase/
+└── functions/          # Edge Functions for serverless operations
+```
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+-   Node.js 18 or higher
+-   npm or yarn package manager
+-   Supabase account ([supabase.com](https://supabase.com))
+-   Resend account ([resend.com](https://resend.com)) for email functionality
+
+### 1. Clone and Install
+
+```bash
+git clone https://github.com/symatix/finance-tracker.git
+cd finance-tracker
+npm install
+```
+
+### 2. Supabase Setup
+
+#### Create Supabase Project
+
+1. Go to [supabase.com](https://supabase.com) and create a new project
+2. Wait for the project to be fully initialized
+
+#### Database Setup
+
+1. Go to your project's **SQL Editor**
+2. Copy and run the entire `database-setup.sql` file
+3. This creates all tables, functions, policies, and indexes
+
+#### Authentication Configuration
+
+1. Go to **Authentication > Settings**
+2. Configure your site URL: `https://symatix.github.io` (or your deployment URL)
+3. Set up email templates if desired (optional - default templates work fine)
+
+#### Environment Variables
+
+1. Go to **Settings > Edge Functions**
+2. Add these environment variables:
+    ```
+    RESEND_API_KEY=your_resend_api_key_here
+    APP_URL=https://symatix.github.io/finance-tracker
+    ```
+
+### 3. Resend Email Setup
+
+#### Create Resend Account
+
+1. Sign up at [resend.com](https://resend.com)
+2. Verify your email and complete onboarding
+
+#### Domain Verification
+
+1. In Resend dashboard, go to **Domains**
+2. Add domain: `symatix.github.io`
+3. Follow DNS verification steps (add TXT records to your GitHub Pages settings)
+
+#### Get API Key
+
+1. Go to **API Keys** in Resend dashboard
+2. Create a new API key
+3. Copy the key for Supabase environment variables
+
+### 4. Deploy Edge Function
+
+#### Email Invitation Function
+
+1. In Supabase dashboard, go to **Edge Functions**
+2. Click **Create a new function**
+3. Name: `send-invitation`
+4. Copy the code from `supabase/functions/send-invitation/index.ts`
+5. Deploy the function
+
+### 5. Environment Configuration
+
+Create a `.env` file in the project root:
+
+```env
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
+```
+
+Get these values from **Settings > API** in your Supabase dashboard.
+
+### 6. Run Locally
+
+```bash
+npm run dev
+```
+
+Visit `http://localhost:5173` to see your app running locally.
+
+### 7. Deploy to Production
+
+#### GitHub Pages Deployment
+
+1. Update `vite.config.ts` with your repository name
+2. Push to GitHub main branch
+3. Enable GitHub Pages in repository settings
+4. Your app will be live at `https://yourusername.github.io/finance-tracker`
+
+## 📊 Database Schema
+
+The application uses a comprehensive PostgreSQL schema with:
+
+-   **Core Tables**: `categories`, `transactions`, `shopping_lists`, `list_items`, `recurring_transactions`, `planned_expenses`
+-   **Collaboration**: `families`, `family_members` for multi-user accounts
+-   **Invitations**: `invitations` table for email-based invites
+-   **Security**: Row Level Security (RLS) policies for data protection
+
+See `database-setup.sql` for the complete schema definition.
+
+## 🔧 Available Scripts
+
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run lint         # Run ESLint
+npm run type-check   # Run TypeScript type checking
+```
+
+## 🎯 Usage Guide
+
+### Getting Started
+
+1. **Sign Up**: Create your account with email and password
+2. **Create Account**: Set up your first financial account (family/household)
+3. **Add Categories**: Create income, expense, and savings categories
+4. **Track Transactions**: Start adding your financial transactions
+5. **Invite Members**: Add family members to collaborate
+
+### Account Management
+
+-   **Roles**: Owner (full control), Admin (manage members), Member (read/write), Viewer (read-only)
+-   **Shared Resources**: Categories and transactions can be shared across account members
+-   **Private Items**: Personal categories remain private to the creator
+
+### Email Invitations
+
+-   Send secure invitations via email
+-   Invitations expire after 7 days
+-   Recipients can accept invitations to join your account
+-   Automatic role assignment upon acceptance
+
+## 🔒 Security Features
+
+-   **Row Level Security**: Database-level access control
+-   **Authentication**: Secure user authentication with Supabase Auth
+-   **Authorization**: Role-based permissions for shared resources
+-   **Data Encryption**: All data encrypted in transit and at rest
+-   **Secure Tokens**: Cryptographically secure invitation tokens
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Make your changes and test thoroughly
+4. Run `npm run lint` and `npm run build` to ensure code quality
+5. Commit your changes: `git commit -m 'Add your feature'`
+6. Push to the branch: `git push origin feature/your-feature`
+7. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+-   [Supabase](https://supabase.com) for the amazing backend-as-a-service platform
+-   [Material-UI](https://mui.com) for the beautiful component library
+-   [Vite](https://vitejs.dev) for the lightning-fast build tool
+-   [Resend](https://resend.com) for reliable email delivery
+
+## 📞 Support
+
+If you encounter any issues or have questions:
+
+1. Check the [Help & Guide](src/pages/help/) section in the app
+2. Review this README for setup instructions
+3. Open an issue on GitHub with detailed information
+4. Check Supabase/Edge Function logs for server-side errors
+
+---
+
+**Happy financial tracking!** 💰📊
 
 ## Features
 

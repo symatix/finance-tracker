@@ -6,10 +6,30 @@ import { TransactionTable } from './components/TransactionTable';
 import { useTransactionFilter } from './hooks/useTransactionFilter';
 import AddTransactionButtons from './components/TransactionActions';
 import { useAuth } from '../../hooks/useAuth';
+import { useState, useEffect } from 'react';
+import { FamilyMemberOperations } from '../../db';
+import type { FamilyMemberDocument } from '../../db';
 
 export function TransactionView() {
 	const { user } = useAuth();
-	const { transactions, categories, updateTransaction, deleteTransaction } = useBudgetStore();
+	const { transactions, categories, updateTransaction, deleteTransaction, currentFamilyId } = useBudgetStore();
+	const [familyMembers, setFamilyMembers] = useState<FamilyMemberDocument[]>([]);
+
+	useEffect(() => {
+		const loadFamilyMembers = async () => {
+			if (!currentFamilyId) return;
+
+			try {
+				const members = await FamilyMemberOperations.findByFamilyId(currentFamilyId);
+				setFamilyMembers(members);
+			} catch (error) {
+				console.error('Error loading family members:', error);
+				setFamilyMembers([]);
+			}
+		};
+
+		loadFamilyMembers();
+	}, [currentFamilyId]);
 
 	const getCategoryName = (id: string) => categories.find((c) => c.id === id)?.name || 'Uncategorized';
 
@@ -46,6 +66,8 @@ export function TransactionView() {
 				categories={categories}
 				onFilterChange={updateFilter}
 				onClearFilters={clearFilters}
+				familyMembers={familyMembers}
+				currentFamilyId={currentFamilyId}
 			/>
 
 			<TransactionTable
@@ -55,6 +77,7 @@ export function TransactionView() {
 				onSort={updateSort}
 				onUpdateTransaction={handleUpdateTransaction}
 				onDeleteTransaction={handleDeleteTransaction}
+				currentFamilyId={currentFamilyId}
 			/>
 		</Box>
 	);

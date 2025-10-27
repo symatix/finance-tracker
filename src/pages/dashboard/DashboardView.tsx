@@ -20,6 +20,7 @@ export default function DashboardView() {
 		categoryBreakdown,
 		incomeVsExpensesData,
 		dailySpendingTrends,
+		burnDownData,
 		activeShoppingListsCount,
 		monthlyPlannedExpensesTotal,
 	} = useDashboardData(selectedMonth, selectedYear);
@@ -61,6 +62,7 @@ export default function DashboardView() {
 				incomeVsExpensesData={incomeVsExpensesData}
 				categoryBreakdown={categoryBreakdown}
 				dailySpendingTrends={dailySpendingTrends}
+				burnDownData={burnDownData}
 			/>
 		</Box>
 	);

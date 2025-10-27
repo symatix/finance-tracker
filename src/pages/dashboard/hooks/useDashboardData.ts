@@ -68,6 +68,34 @@ export function useDashboardData(selectedMonth: number, selectedYear: number) {
 		return dailyData;
 	}, [filteredTransactions, selectedMonth, selectedYear]);
 
+	// Burn down chart - cumulative balance over time
+	const burnDownData = useMemo(() => {
+		const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+		const burnDown = [];
+		let cumulativeBalance = 0;
+
+		for (let day = 1; day <= daysInMonth; day++) {
+			const dayTransactions = filteredTransactions.filter((t) => {
+				const date = new Date(t.date);
+				return date.getDate() === day;
+			});
+
+			const dayIncome = dayTransactions.filter((t) => t.type === 'Income').reduce((sum, t) => sum + t.amount, 0);
+			const dayExpenses = dayTransactions
+				.filter((t) => t.type === 'Expense')
+				.reduce((sum, t) => sum + t.amount, 0);
+
+			cumulativeBalance += dayIncome - dayExpenses;
+
+			burnDown.push({
+				day: day.toString(),
+				balance: cumulativeBalance,
+			});
+		}
+
+		return burnDown;
+	}, [filteredTransactions, selectedMonth, selectedYear]);
+
 	// Chart data for income vs expenses
 	const incomeVsExpensesData = useMemo(
 		() => [
@@ -88,6 +116,7 @@ export function useDashboardData(selectedMonth: number, selectedYear: number) {
 		categoryBreakdown,
 		incomeVsExpensesData,
 		dailySpendingTrends,
+		burnDownData,
 		activeShoppingListsCount,
 		monthlyPlannedExpensesTotal,
 		loading: metricsLoading,

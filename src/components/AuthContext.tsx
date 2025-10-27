@@ -2,6 +2,7 @@ import React, { createContext, useEffect, useState } from 'react';
 import type { User, Session, AuthError } from '@supabase/supabase-js';
 import type { ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { ProfileOperations } from '../db';
 
 interface AuthContextType {
 	user: User | null;
@@ -25,26 +26,52 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 	const [session, setSession] = useState<Session | null>(null);
 	const [loading, setLoading] = useState(true);
 
-	useEffect(() => {
-		// Get initial session
-		supabase.auth.getSession().then(({ data: { session } }) => {
-			setSession(session);
-			setUser(session?.user ?? null);
-			setLoading(false);
-		});
+	// Ensure a profile exists for the authenticated user
+	const ensureProfileExists = async (authUser: User) => {
+		try {
+			console.log('Starting ensureProfileExists for user:', authUser.email, 'id:', authUser.id);
 
-		// Listen for auth changes
+			// Check if profile already exists
+			console.log('Calling findByUserId...');
+			const existingProfile = await ProfileOperations.findByUserId(authUser.id);
+			console.log('findByUserId result:', existingProfile);
+
+			if (!existingProfile) {
+				console.log('Profile not found, calling upsert...');
+				// Create a basic profile with email
+				await ProfileOperations.upsert(authUser.id, {
+					email: authUser.email,
+				});
+				console.log('Upsert completed');
+			} else {
+				console.log('Profile already exists');
+			}
+		} catch (error) {
+			console.error('Error ensuring profile exists:', error);
+			// Don't throw - this shouldn't block authentication
+			console.warn('⚠️ Profile check failed - continuing without profile creation');
+		}
+	};
+
+	useEffect(() => {
+		// Listen for auth changes (including initial session)
 		const {
 			data: { subscription },
-		} = supabase.auth.onAuthStateChange((_event: string, session: Session | null) => {
+		} = supabase.auth.onAuthStateChange(async (_event: string, session: Session | null) => {
+			console.log('Auth state change - event:', _event, 'session:', session ? 'exists' : 'null');
 			setSession(session);
 			setUser(session?.user ?? null);
+
+			// Create profile if user is authenticated and doesn't have one
+			if (session?.user) {
+				await ensureProfileExists(session.user);
+			}
+
 			setLoading(false);
 		});
 
 		return () => subscription.unsubscribe();
 	}, []);
-
 	const signIn = async (email: string, password: string) => {
 		const { error } = await supabase.auth.signInWithPassword({
 			email,
