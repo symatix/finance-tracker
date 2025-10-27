@@ -61,11 +61,11 @@ export function RecurringTransactionModal({
 			setFormData({
 				name: editingRecurring.name,
 				amount: editingRecurring.amount.toString(),
-				type: editingRecurring.type,
+				type: editingRecurring.type as 'Income' | 'Expense' | 'Savings',
 				category_id: editingRecurring.category_id,
 				subcategory: editingRecurring.subcategory || '',
-				note: editingRecurring.note,
-				frequency: editingRecurring.frequency,
+				note: editingRecurring.note || '',
+				frequency: editingRecurring.frequency as 'daily' | 'weekly' | 'monthly' | 'yearly',
 				start_date: editingRecurring.start_date,
 				end_date: editingRecurring.end_date || '',
 			});

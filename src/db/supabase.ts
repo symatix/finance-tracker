@@ -1,15 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-	throw new Error('Missing Supabase environment variables. Please check your .env file.');
-}
-
-export const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Database types
 export interface Database {
 	public: {
 		Tables: {
@@ -17,28 +7,30 @@ export interface Database {
 				Row: {
 					id: string;
 					name: string;
-					type: 'Income' | 'Expense' | 'Savings';
-					subcategories: string[];
-					user_id: string;
+					type: string;
+					subcategories: string[] | null;
+					created_by: string | null;
+					shared_account_id: string | null;
+					is_shared: boolean;
 					created_at: string;
 					updated_at: string;
 				};
 				Insert: {
 					id?: string;
 					name: string;
-					type: 'Income' | 'Expense' | 'Savings';
-					subcategories?: string[];
-					user_id: string;
+					type: string;
+					subcategories?: string[] | null;
+					created_by?: string;
+					shared_account_id?: string | null;
+					is_shared?: boolean;
 					created_at?: string;
 					updated_at?: string;
 				};
 				Update: {
 					id?: string;
 					name?: string;
-					type?: 'Income' | 'Expense' | 'Savings';
-					subcategories?: string[];
-					user_id?: string;
-					created_at?: string;
+					type?: string;
+					subcategories?: string[] | null;
 					updated_at?: string;
 				};
 			};
@@ -46,37 +38,41 @@ export interface Database {
 				Row: {
 					id: string;
 					amount: number;
-					type: 'Income' | 'Expense' | 'Savings';
+					type: string;
 					category_id: string;
 					subcategory: string | null;
-					note: string;
+					note: string | null;
 					date: string;
-					user_id: string;
+					user_id: string | null;
+					created_by: string | null;
+					shared_account_id: string | null;
+					is_shared: boolean;
 					created_at: string;
 					updated_at: string;
 				};
 				Insert: {
 					id?: string;
 					amount: number;
-					type: 'Income' | 'Expense' | 'Savings';
+					type: string;
 					category_id: string;
 					subcategory?: string | null;
-					note: string;
+					note?: string | null;
 					date: string;
-					user_id: string;
+					user_id?: string | null;
+					created_by?: string;
+					shared_account_id?: string | null;
+					is_shared?: boolean;
 					created_at?: string;
 					updated_at?: string;
 				};
 				Update: {
 					id?: string;
 					amount?: number;
-					type?: 'Income' | 'Expense' | 'Savings';
+					type?: string;
 					category_id?: string;
 					subcategory?: string | null;
-					note?: string;
+					note?: string | null;
 					date?: string;
-					user_id?: string;
-					created_at?: string;
 					updated_at?: string;
 				};
 			};
@@ -86,8 +82,11 @@ export interface Database {
 					name: string;
 					category_id: string;
 					subcategory: string | null;
-					status: 'active' | 'completed';
-					user_id: string;
+					status: string;
+					user_id: string | null;
+					created_by: string | null;
+					shared_account_id: string | null;
+					is_shared: boolean;
 					created_at: string;
 					updated_at: string;
 				};
@@ -96,8 +95,11 @@ export interface Database {
 					name: string;
 					category_id: string;
 					subcategory?: string | null;
-					status?: 'active' | 'completed';
-					user_id: string;
+					status?: string;
+					user_id?: string | null;
+					created_by?: string;
+					shared_account_id?: string | null;
+					is_shared?: boolean;
 					created_at?: string;
 					updated_at?: string;
 				};
@@ -106,9 +108,7 @@ export interface Database {
 					name?: string;
 					category_id?: string;
 					subcategory?: string | null;
-					status?: 'active' | 'completed';
-					user_id?: string;
-					created_at?: string;
+					status?: string;
 					updated_at?: string;
 				};
 			};
@@ -140,7 +140,6 @@ export interface Database {
 					quantity?: number;
 					estimated_price?: number | null;
 					checked?: boolean;
-					created_at?: string;
 					updated_at?: string;
 				};
 			};
@@ -149,16 +148,19 @@ export interface Database {
 					id: string;
 					name: string;
 					amount: number;
-					type: 'Income' | 'Expense' | 'Savings';
+					type: string;
 					category_id: string;
 					subcategory: string | null;
-					note: string;
-					frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+					note: string | null;
+					frequency: string;
 					start_date: string;
 					end_date: string | null;
 					next_due_date: string;
 					is_active: boolean;
-					user_id: string;
+					user_id: string | null;
+					created_by: string | null;
+					shared_account_id: string | null;
+					is_shared: boolean;
 					created_at: string;
 					updated_at: string;
 				};
@@ -166,16 +168,19 @@ export interface Database {
 					id?: string;
 					name: string;
 					amount: number;
-					type: 'Income' | 'Expense' | 'Savings';
+					type: string;
 					category_id: string;
 					subcategory?: string | null;
-					note: string;
-					frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+					note?: string | null;
+					frequency: string;
 					start_date: string;
 					end_date?: string | null;
 					next_due_date: string;
 					is_active?: boolean;
-					user_id: string;
+					user_id?: string | null;
+					created_by?: string;
+					shared_account_id?: string | null;
+					is_shared?: boolean;
 					created_at?: string;
 					updated_at?: string;
 				};
@@ -183,20 +188,112 @@ export interface Database {
 					id?: string;
 					name?: string;
 					amount?: number;
-					type?: 'Income' | 'Expense' | 'Savings';
+					type?: string;
 					category_id?: string;
 					subcategory?: string | null;
-					note?: string;
-					frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+					note?: string | null;
+					frequency?: string;
 					start_date?: string;
 					end_date?: string | null;
 					next_due_date?: string;
 					is_active?: boolean;
-					user_id?: string;
-					created_at?: string;
 					updated_at?: string;
 				};
 			};
+			families: {
+				Row: {
+					id: string;
+					name: string;
+					description: string | null;
+					owner_id: string;
+					created_at: string;
+					updated_at: string;
+				};
+				Insert: {
+					id?: string;
+					name: string;
+					description?: string | null;
+					owner_id: string;
+					created_at?: string;
+					updated_at?: string;
+				};
+				Update: {
+					id?: string;
+					name?: string;
+					description?: string | null;
+					updated_at?: string;
+				};
+			};
+			family_members: {
+				Row: {
+					id: string;
+					family_id: string;
+					user_id: string;
+					role: string;
+					joined_at: string;
+				};
+				Insert: {
+					id?: string;
+					family_id: string;
+					user_id: string;
+					role?: string;
+					joined_at?: string;
+				};
+				Update: {
+					id?: string;
+					role?: string;
+				};
+			};
+			invitations: {
+				Row: {
+					id: string;
+					email: string;
+					invited_by: string;
+					family_id: string;
+					role: string;
+					status: string;
+					invite_token: string | null;
+					expires_at: string;
+					created_at: string;
+					accepted_at: string | null;
+					accepted_by: string | null;
+				};
+				Insert: {
+					id?: string;
+					email: string;
+					invited_by: string;
+					family_id: string;
+					role?: string;
+					status?: string;
+					invite_token?: string | null;
+					expires_at?: string;
+					created_at?: string;
+					accepted_at?: string | null;
+					accepted_by?: string | null;
+				};
+				Update: {
+					id?: string;
+					status?: string;
+					accepted_at?: string | null;
+					accepted_by?: string | null;
+				};
+			};
+		};
+		Views: {
+			[_ in never]: never;
+		};
+		Functions: {
+			[_ in never]: never;
+		};
+		Enums: {
+			[_ in never]: never;
 		};
 	};
 }
+
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

@@ -37,6 +37,7 @@ export const NavBar = () => {
 		{ label: 'Planned', path: '/planned' },
 		{ label: 'Shopping', path: '/shopping' },
 		{ label: 'Categories', path: '/categories' },
+		{ label: 'Family', path: '/family' },
 	];
 
 	const handleDrawerToggle = () => {

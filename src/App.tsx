@@ -4,6 +4,7 @@ import { NavBar } from './components/NavBar';
 import { AuthProvider } from './components/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './components/Login';
+import AcceptInvitation from './pages/AcceptInvitation';
 import { useAuth } from './hooks/useAuth';
 import { useBudgetStore } from './store';
 
@@ -13,6 +14,7 @@ const CategoryPage = lazy(() => import('./pages/category'));
 const ShoppingPage = lazy(() => import('./pages/shopping').then((module) => ({ default: module.default })));
 const RecurringPage = lazy(() => import('./pages/recurring').then((module) => ({ default: module.default })));
 const PlannedPage = lazy(() => import('./pages/planned').then((module) => ({ default: module.default })));
+const FamilyPage = lazy(() => import('./pages/family').then((module) => ({ default: module.default })));
 const HelpPage = lazy(() => import('./pages/help').then((module) => ({ default: module.default })));
 
 function AppContent() {
@@ -64,6 +66,7 @@ function AppContent() {
 				<Route path='/shopping' element={<ShoppingPage />} />
 				<Route path='/recurring' element={<RecurringPage />} />
 				<Route path='/planned' element={<PlannedPage />} />
+				<Route path='/family' element={<FamilyPage />} />
 				<Route path='/help' element={<HelpPage />} />
 				{/* Fallback */}
 				<Route path='*' element={<Navigate to='/dashboard' replace />} />
@@ -79,6 +82,8 @@ export default function App() {
 				<Routes>
 					{/* Public login route */}
 					<Route path='/login' element={<Login />} />
+					{/* Public invitation acceptance route */}
+					<Route path='/accept-invite' element={<AcceptInvitation />} />
 
 					{/* Protected routes */}
 					<Route

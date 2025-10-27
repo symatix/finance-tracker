@@ -49,6 +49,9 @@ export interface PlannedExpenseInsert {
 	priority?: 'low' | 'medium' | 'high' | 'urgent';
 	status?: 'planned' | 'confirmed' | 'completed' | 'cancelled';
 	user_id?: string | null;
+	created_by?: string;
+	shared_account_id?: string | null;
+	is_shared?: boolean;
 	created_at?: string;
 	updated_at?: string;
 }
@@ -93,3 +96,95 @@ export type UpdateRecurringTransactionInput = RecurringTransactionUpdate;
 export type PlannedExpenseDocument = PlannedExpenseRow;
 export type CreatePlannedExpenseInput = PlannedExpenseInsert;
 export type UpdatePlannedExpenseInput = PlannedExpenseUpdate;
+
+// Family and Collaboration types (defined manually until Supabase types are regenerated)
+export interface FamilyRow {
+	id: string;
+	name: string;
+	description: string | null;
+	owner_id: string;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface FamilyInsert {
+	id?: string;
+	name: string;
+	description?: string | null;
+	owner_id: string;
+	created_at?: string;
+	updated_at?: string;
+}
+
+export interface FamilyUpdate {
+	name?: string;
+	description?: string | null;
+	updated_at?: string;
+}
+
+export interface FamilyMemberRow {
+	id: string;
+	family_id: string;
+	user_id: string;
+	role: 'owner' | 'admin' | 'member' | 'viewer';
+	joined_at: string;
+}
+
+export interface FamilyMemberInsert {
+	id?: string;
+	family_id: string;
+	user_id: string;
+	role?: 'owner' | 'admin' | 'member' | 'viewer';
+	joined_at?: string;
+}
+
+export interface FamilyMemberUpdate {
+	role?: 'owner' | 'admin' | 'member' | 'viewer';
+}
+
+export type FamilyDocument = FamilyRow;
+export type CreateFamilyInput = FamilyInsert;
+export type UpdateFamilyInput = FamilyUpdate;
+
+export type FamilyMemberDocument = FamilyMemberRow;
+export type CreateFamilyMemberInput = FamilyMemberInsert;
+export type UpdateFamilyMemberInput = FamilyMemberUpdate;
+
+// Invitation types
+export interface InvitationRow {
+	id: string;
+	email: string;
+	invited_by: string;
+	family_id: string;
+	role: 'owner' | 'admin' | 'member' | 'viewer';
+	status: 'pending' | 'accepted' | 'expired' | 'cancelled';
+	invite_token: string | null;
+	expires_at: string;
+	created_at: string;
+	accepted_at: string | null;
+	accepted_by: string | null;
+}
+
+export interface InvitationInsert {
+	id?: string;
+	email: string;
+	invited_by: string;
+	family_id: string;
+	role?: 'owner' | 'admin' | 'member' | 'viewer';
+	status?: 'pending' | 'accepted' | 'expired' | 'cancelled';
+	invite_token?: string | null;
+	expires_at?: string;
+	created_at?: string;
+	accepted_at?: string | null;
+	accepted_by?: string | null;
+}
+
+export interface InvitationUpdate {
+	status?: 'pending' | 'accepted' | 'expired' | 'cancelled';
+	accepted_at?: string | null;
+	accepted_by?: string | null;
+}
+
+export type InvitationDocument = InvitationRow;
+export type CreateInvitationInput = InvitationInsert;
+export type UpdateInvitationInput = InvitationUpdate;

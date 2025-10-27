@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Box, TextField, Button, Typography, Alert, Container, Paper } from '@mui/material';
 import { useAuth } from '../hooks/useAuth';
 
 export const Login = () => {
 	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
 
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
@@ -12,6 +13,16 @@ export const Login = () => {
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
 	const { signIn, signUp } = useAuth();
+
+	// Check for invitation token
+	const inviteToken = searchParams.get('invite');
+
+	useEffect(() => {
+		if (inviteToken) {
+			// Pre-fill email if we can get it from somewhere, but for now just show a message
+			setError('');
+		}
+	}, [inviteToken]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -24,7 +35,12 @@ export const Login = () => {
 			if (error) {
 				setError(error.message);
 			} else {
-				navigate('/dashboard');
+				// Redirect based on whether there's an invitation
+				if (inviteToken) {
+					navigate(`/accept-invite?token=${inviteToken}`);
+				} else {
+					navigate('/dashboard');
+				}
 			}
 		} catch {
 			setError('An unexpected error occurred');
@@ -59,6 +75,13 @@ export const Login = () => {
 					<Typography variant='body2' color='text.secondary' sx={{ mb: 3 }}>
 						{isSignUp ? 'Sign up' : 'Log in'}
 					</Typography>
+
+					{inviteToken && (
+						<Alert severity='info' sx={{ mb: 2, width: '100%' }}>
+							You've been invited to join an account! {isSignUp ? 'Create your account' : 'Log in'} to
+							accept the invitation.
+						</Alert>
+					)}
 
 					<Box component='form' onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
 						<TextField

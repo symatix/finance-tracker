@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS categories (
     name TEXT NOT NULL,
     type TEXT NOT NULL CHECK (type IN ('Income', 'Expense', 'Savings')),
     subcategories TEXT[] DEFAULT '{}',
+    created_by UUID REFERENCES auth.users(id),
+    shared_account_id UUID REFERENCES families(id),
+    is_shared BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -109,14 +112,169 @@ ALTER TABLE list_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recurring_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE planned_expenses ENABLE ROW LEVEL SECURITY;
 
--- Create policies for public access (adjust as needed for your security requirements)
--- For now, allow all operations (you may want to restrict this based on user_id in the future)
-CREATE POLICY "Allow all operations on categories" ON categories FOR ALL USING (true);
-CREATE POLICY "Allow all operations on transactions" ON transactions FOR ALL USING (true);
-CREATE POLICY "Allow all operations on shopping_lists" ON shopping_lists FOR ALL USING (true);
-CREATE POLICY "Allow all operations on list_items" ON list_items FOR ALL USING (true);
-CREATE POLICY "Allow all operations on recurring_transactions" ON recurring_transactions FOR ALL USING (true);
-CREATE POLICY "Allow all operations on planned_expenses" ON planned_expenses FOR ALL USING (true);
+-- Enable Row Level Security for collaboration tables
+ALTER TABLE families ENABLE ROW LEVEL SECURITY;
+ALTER TABLE family_members ENABLE ROW LEVEL SECURITY;
+
+-- Update existing RLS policies to support collaboration
+-- Drop existing policies
+DROP POLICY IF EXISTS "Allow all operations on categories" ON categories;
+DROP POLICY IF EXISTS "Allow all operations on transactions" ON transactions;
+DROP POLICY IF EXISTS "Allow all operations on shopping_lists" ON shopping_lists;
+DROP POLICY IF EXISTS "Allow all operations on list_items" ON list_items;
+DROP POLICY IF EXISTS "Allow all operations on recurring_transactions" ON recurring_transactions;
+DROP POLICY IF EXISTS "Allow all operations on planned_expenses" ON planned_expenses;
+
+-- Categories policies (collaboration-enabled)
+-- Categories can be viewed by all authenticated users (for consistency)
+-- But management is restricted to creators and family members
+CREATE POLICY "Categories are viewable by authenticated users v2" ON categories
+    FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Categories are manageable by creators and family members v2" ON categories
+    FOR ALL USING (
+        auth.role() = 'authenticated' AND (
+            created_by = auth.uid() OR
+            can_access_shared_resource(shared_account_id, 'admin')
+        )
+    );
+
+-- Helper function to check if user can access a shared resource
+CREATE OR REPLACE FUNCTION can_access_shared_resource(shared_account_id UUID, required_role TEXT DEFAULT 'viewer')
+RETURNS BOOLEAN AS $$
+BEGIN
+    -- If not shared, only creator can access
+    IF shared_account_id IS NULL THEN
+        RETURN true; -- Will be checked by user_id in individual policies
+    END IF;
+
+    -- Check if user is a member of the family with appropriate role
+    RETURN EXISTS (
+        SELECT 1 FROM family_members fm
+        WHERE fm.family_id = shared_account_id
+        AND fm.user_id = auth.uid()
+        AND (
+            fm.role = 'owner' OR
+            fm.role = 'admin' OR
+            (fm.role = 'member' AND required_role IN ('viewer', 'member')) OR
+            (fm.role = 'viewer' AND required_role = 'viewer')
+        )
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Transactions policies
+CREATE POLICY "Users can view their own transactions" ON transactions
+    FOR SELECT USING (
+        auth.role() = 'authenticated' AND (
+            user_id = auth.uid() OR
+            can_access_shared_resource(shared_account_id, 'viewer')
+        )
+    );
+
+CREATE POLICY "Users can manage their own transactions" ON transactions
+    FOR ALL USING (
+        auth.role() = 'authenticated' AND (
+            user_id = auth.uid() OR
+            can_access_shared_resource(shared_account_id, 'member')
+        )
+    );
+
+-- Shopping lists policies
+CREATE POLICY "Users can view accessible shopping lists" ON shopping_lists
+    FOR SELECT USING (
+        auth.role() = 'authenticated' AND (
+            user_id = auth.uid() OR
+            can_access_shared_resource(shared_account_id, 'viewer')
+        )
+    );
+
+CREATE POLICY "Users can manage accessible shopping lists" ON shopping_lists
+    FOR ALL USING (
+        auth.role() = 'authenticated' AND (
+            user_id = auth.uid() OR
+            can_access_shared_resource(shared_account_id, 'member')
+        )
+    );
+
+-- List items policies (inherit from shopping lists)
+CREATE POLICY "Users can manage list items in accessible lists" ON list_items
+    FOR ALL USING (
+        auth.role() = 'authenticated' AND
+        EXISTS (
+            SELECT 1 FROM shopping_lists sl
+            WHERE sl.id = list_items.list_id
+            AND (
+                sl.user_id = auth.uid() OR
+                can_access_shared_resource(sl.shared_account_id, 'member')
+            )
+        )
+    );
+
+-- Recurring transactions policies
+CREATE POLICY "Users can view their recurring transactions" ON recurring_transactions
+    FOR SELECT USING (
+        auth.role() = 'authenticated' AND (
+            user_id = auth.uid() OR
+            can_access_shared_resource(shared_account_id, 'viewer')
+        )
+    );
+
+CREATE POLICY "Users can manage their recurring transactions" ON recurring_transactions
+    FOR ALL USING (
+        auth.role() = 'authenticated' AND (
+            user_id = auth.uid() OR
+            can_access_shared_resource(shared_account_id, 'member')
+        )
+    );
+
+-- Planned expenses policies
+CREATE POLICY "Users can view their planned expenses" ON planned_expenses
+    FOR SELECT USING (
+        auth.role() = 'authenticated' AND (
+            user_id = auth.uid() OR
+            can_access_shared_resource(shared_account_id, 'viewer')
+        )
+    );
+
+CREATE POLICY "Users can manage their planned expenses" ON planned_expenses
+    FOR ALL USING (
+        auth.role() = 'authenticated' AND (
+            user_id = auth.uid() OR
+            can_access_shared_resource(shared_account_id, 'member')
+        )
+    );
+
+-- Family policies (fixed - no circular dependencies)
+CREATE POLICY "Users can view families they belong to" ON families
+    FOR SELECT USING (
+        auth.role() = 'authenticated' AND owner_id = auth.uid()
+    );
+
+CREATE POLICY "Family owners can manage their families" ON families
+    FOR ALL USING (
+        auth.role() = 'authenticated' AND owner_id = auth.uid()
+    );
+
+-- Family members policies (fixed - no circular dependencies)
+CREATE POLICY "Users can view family memberships" ON family_members
+    FOR SELECT USING (
+        auth.role() = 'authenticated' AND user_id = auth.uid()
+    );
+
+CREATE POLICY "Family owners can manage members" ON family_members
+    FOR ALL USING (
+        auth.role() = 'authenticated' AND (
+            -- Family owner can manage all members
+            EXISTS (
+                SELECT 1 FROM families f
+                WHERE f.id = family_members.family_id
+                AND f.owner_id = auth.uid()
+            ) OR
+            -- Users can manage their own membership
+            family_members.user_id = auth.uid()
+        )
+    );
 
 -- Function to calculate next due date based on frequency
 CREATE OR REPLACE FUNCTION calculate_next_due_date(input_date DATE, frequency TEXT)
@@ -160,7 +318,7 @@ BEGIN
         -- Check if we've reached the end date
         should_deactivate := (rec.end_date IS NOT NULL AND next_due > rec.end_date);
 
-        -- Create the actual transaction
+        -- Create the actual transaction with collaboration fields
         INSERT INTO transactions (
             amount,
             type,
@@ -168,7 +326,10 @@ BEGIN
             subcategory,
             note,
             date,
-            user_id
+            user_id,
+            created_by,
+            shared_account_id,
+            is_shared
         ) VALUES (
             rec.amount,
             rec.type,
@@ -176,7 +337,10 @@ BEGIN
             rec.subcategory,
             COALESCE(rec.note, rec.name || ' (Recurring)'),
             rec.next_due_date,
-            rec.user_id
+            rec.user_id,
+            rec.created_by,
+            rec.shared_account_id,
+            rec.is_shared
         );
 
         -- Update the recurring transaction
@@ -211,12 +375,76 @@ $$ LANGUAGE plpgsql;
 --   else console.log(`Processed ${data[0].processed_count} recurring transactions`);
 -- }
 
--- Insert some sample data
--- INSERT INTO categories (name, type, subcategories) VALUES
---     ('Salary', 'Income', '{}'),
---     ('Freelance', 'Income', '{}'),
---     ('Food & Dining', 'Expense', '{"Groceries", "Restaurants", "Coffee"}'),
---     ('Transportation', 'Expense', '{"Gas", "Public Transport", "Car Maintenance"}'),
---     ('Entertainment', 'Expense', '{"Movies", "Games", "Subscriptions"}'),
---     ('Savings', 'Savings', '{"Emergency Fund", "Vacation", "Investment"}')
--- ON CONFLICT DO NOTHING;
+-- Create families table for shared accounts/households
+CREATE TABLE IF NOT EXISTS families (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create family_members table
+CREATE TABLE IF NOT EXISTS family_members (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    family_id UUID NOT NULL REFERENCES families(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member', 'viewer')),
+    joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(family_id, user_id)
+);
+
+-- Add collaboration fields to existing tables
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES auth.users(id);
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS shared_account_id UUID REFERENCES families(id);
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS is_shared BOOLEAN DEFAULT FALSE;
+
+ALTER TABLE shopping_lists ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES auth.users(id);
+ALTER TABLE shopping_lists ADD COLUMN IF NOT EXISTS shared_account_id UUID REFERENCES families(id);
+ALTER TABLE shopping_lists ADD COLUMN IF NOT EXISTS is_shared BOOLEAN DEFAULT FALSE;
+
+ALTER TABLE recurring_transactions ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES auth.users(id);
+ALTER TABLE recurring_transactions ADD COLUMN IF NOT EXISTS shared_account_id UUID REFERENCES families(id);
+ALTER TABLE recurring_transactions ADD COLUMN IF NOT EXISTS is_shared BOOLEAN DEFAULT FALSE;
+
+ALTER TABLE planned_expenses ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES auth.users(id);
+ALTER TABLE planned_expenses ADD COLUMN IF NOT EXISTS shared_account_id UUID REFERENCES families(id);
+ALTER TABLE planned_expenses ADD COLUMN IF NOT EXISTS is_shared BOOLEAN DEFAULT FALSE;
+
+-- Create indexes for collaboration features
+CREATE INDEX IF NOT EXISTS idx_families_owner_id ON families(owner_id);
+CREATE INDEX IF NOT EXISTS idx_family_members_family_id ON family_members(family_id);
+CREATE INDEX IF NOT EXISTS idx_family_members_user_id ON family_members(user_id);
+CREATE INDEX IF NOT EXISTS idx_family_members_role ON family_members(role);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_created_by ON transactions(created_by);
+CREATE INDEX IF NOT EXISTS idx_transactions_shared_account_id ON transactions(shared_account_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_is_shared ON transactions(is_shared);
+
+CREATE INDEX IF NOT EXISTS idx_shopping_lists_created_by ON shopping_lists(created_by);
+CREATE INDEX IF NOT EXISTS idx_shopping_lists_shared_account_id ON shopping_lists(shared_account_id);
+CREATE INDEX IF NOT EXISTS idx_shopping_lists_is_shared ON shopping_lists(is_shared);
+
+CREATE INDEX IF NOT EXISTS idx_recurring_transactions_created_by ON recurring_transactions(created_by);
+CREATE INDEX IF NOT EXISTS idx_recurring_transactions_shared_account_id ON recurring_transactions(shared_account_id);
+CREATE INDEX IF NOT EXISTS idx_recurring_transactions_is_shared ON recurring_transactions(is_shared);
+
+CREATE INDEX IF NOT EXISTS idx_planned_expenses_created_by ON planned_expenses(created_by);
+CREATE INDEX IF NOT EXISTS idx_planned_expenses_shared_account_id ON planned_expenses(shared_account_id);
+CREATE INDEX IF NOT EXISTS idx_planned_expenses_is_shared ON planned_expenses(is_shared);
+
+-- Create trigger to automatically add family owner to family_members
+CREATE OR REPLACE FUNCTION add_family_owner_to_members()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO family_members (family_id, user_id, role)
+    VALUES (NEW.id, NEW.owner_id, 'owner')
+    ON CONFLICT (family_id, user_id) DO NOTHING;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER trigger_add_family_owner
+    AFTER INSERT ON families
+    FOR EACH ROW EXECUTE FUNCTION add_family_owner_to_members();
